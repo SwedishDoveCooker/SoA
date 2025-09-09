@@ -78,7 +78,6 @@ const SongCell: React.FC<SongCellProps> = ({ row, apiRef }) => {
   const IconToShow = isCurrentTrack && isPlaying ? FaPause : FaPlay;
 
   const isOverlayVisible = isHovered || (isCurrentTrack && isPlaying);
-  // const isOverlayVisible = isHovered;
 
   return (
     <Flex
@@ -120,12 +119,10 @@ export const ScoreCell: React.FC<
   if (!value) {
     return <></>;
   }
-  // 您可以在这里添加更丰富的显示逻辑，比如根据评分显示不同颜色或图标
   return <>{value}</>;
 };
 
 const ScoreEditCell: React.FC<GridRenderEditCellParams<Track>> = (row) => {
-  // console.log("Rendering ScoreCell for row:", row.score);
   const apiRef = useGridApiContext();
   const { id, value, field } = row;
 
@@ -177,8 +174,6 @@ const ScoreEditCell: React.FC<GridRenderEditCellParams<Track>> = (row) => {
 const LibraryPage: React.FC = () => {
   const { playlist, setPlaylist, updateTrack } = useMusic();
   const apiRef = useGridApiRef();
-  // const currentTrackId =
-  //   currentTrackIndex !== null ? playlist[currentTrackIndex]?.id : null;
 
   const handleScan = async () => {
     try {
@@ -186,7 +181,6 @@ const LibraryPage: React.FC = () => {
       if (typeof selected === "string") {
         await invoke("scan_dir", { directory: selected });
         const newTracks: Track[] = await invoke("get_all_tracks");
-        // console.log("New tracks:", newTracks);
         setPlaylist(newTracks);
       }
     } catch (error) {
@@ -211,11 +205,6 @@ const LibraryPage: React.FC = () => {
     [updateTrack]
   );
 
-  // const handleRowUpdateError: GridEventListener<E> =
-  //   React.useCallback(() => {
-  //     console.error("Row update error");
-  //   }, []);
-
   const columns: GridColDef<Track>[] = [
     {
       field: "title",
@@ -230,7 +219,6 @@ const LibraryPage: React.FC = () => {
       headerName: "Artist",
       editable: true,
       width: 150,
-      // renderCell: (params) => <ArtistCell {...params} />,
       valueGetter: (_, row) => row.artist_name,
     },
     {
@@ -245,11 +233,9 @@ const LibraryPage: React.FC = () => {
       headerName: "Score",
       width: 260,
       editable: true,
-      // renderCell: (params) => <ScoreCell {...params} />,
       renderCell: (params) => <ScoreCell {...params} />,
       renderEditCell: (params) => <ScoreEditCell {...params} />,
       sortComparator: scoreSortComparator,
-      // valueGetter: (_, row) => row.score || "Unscored",
     },
     {
       field: "duration",
@@ -257,7 +243,6 @@ const LibraryPage: React.FC = () => {
       width: 50,
       align: "right",
       headerAlign: "right",
-      // renderCell: (params) => <DurationCell {...params} />,
       valueGetter: (_, row) => formatDuration(row.duration),
     },
   ];
@@ -285,7 +270,6 @@ const LibraryPage: React.FC = () => {
             rowHeight={52}
             hideFooter
             processRowUpdate={processRowUpdate}
-            // onRowUpdateError={handleRowUpdateError}
             sx={{
               border: "none",
               "& .MuiDataGrid-columnHeaders": {
@@ -295,7 +279,6 @@ const LibraryPage: React.FC = () => {
                 fontWeight: "bold",
                 color: "var(--gray-a10)",
                 fontSize: "12px",
-                // textTransform: "uppercase",
               },
               "& .MuiDataGrid-cell": {
                 borderBottom: "0px solid var(--gray-a3)",
@@ -321,139 +304,8 @@ const LibraryPage: React.FC = () => {
           />
         </Box>
       </div>
-      {/* <Paper sx={{ height: 400, width: "100%" }}>
-        <DataGrid
-
-          rows={rows}
-          columns={columns}
-          initialState={{ pagination: { paginationModel } }}
-          pageSizeOptions={[5, 10]}
-          checkboxSelection
-          sx={{ border: 0 }}
-        />
-      </Paper> */}
-      {/* <Table.Root variant="ghost">
-        <Table.Header>
-          <Table.Row>
-            <Table.ColumnHeaderCell>Song</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell>Artist</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell>Release</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell>Duration</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell>Score</Table.ColumnHeaderCell>
-          </Table.Row>
-        </Table.Header>
-
-        <Table.Body>
-          {playlist.map((track, index) => (
-            <Table.Row
-              key={track.id}
-              align="center"
-              className={track.id === currentTrackId ? "playing-row" : ""}
-            >
-              <Table.RowHeaderCell>
-                <Avatar
-                  src={track.release_art_b64 || undefined}
-                  fallback="?"
-                  className="player-info-album-art"
-                  radius="small"
-                />
-                <IconButton variant="ghost" onClick={() => playTrack(index)}>
-                  <IconContext.Provider
-                    value={{ color: "white", className: "yang-zheng" }}
-                  >
-                    <FaPlay />
-                  </IconContext.Provider>
-                </IconButton>
-                {track.title}
-              </Table.RowHeaderCell>
-              <Table.Cell>{track.artist_name || ""}</Table.Cell>
-              <Table.Cell>{track.release_name || ""}</Table.Cell>
-              <Table.Cell>{formatDuration(track.duration)}</Table.Cell>
-              <Table.Cell>{track.score || "UnScored"}</Table.Cell>
-            </Table.Row>
-          ))}
-        </Table.Body>
-      </Table.Root> */}
     </Box>
   );
 };
 
 export default LibraryPage;
-
-// import React, { useState } from "react";
-// import { useMusic, Track } from "../contexts/MusicContext";
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableContainer,
-//   TableHead,
-//   TableRow,
-//   Paper,
-//   IconButton,
-// } from "@mui/material";
-// import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-// import EditIcon from "@mui/icons-material/Edit";
-// import EditTrack from "../components/EditTrack";
-
-// const LibraryPage: React.FC = () => {
-//   const { playlist, playTrack } = useMusic();
-//   const [editingTrack, setEditingTrack] = useState<Track | null>(null);
-
-//   const handleEditClick = (track: Track) => {
-//     setEditingTrack(track);
-//   };
-
-//   const handleCloseModal = () => {
-//     setEditingTrack(null);
-//   };
-
-//   return (
-//     <>
-//       <TableContainer component={Paper}>
-//         <Table sx={{ minWidth: 650 }} aria-label="simple table">
-//           <TableHead>
-//             <TableRow>
-//               <TableCell>Play</TableCell>
-//               <TableCell>Title</TableCell>
-//               <TableCell>Artist</TableCell>
-//               <TableCell>Album</TableCell>
-//               <TableCell>Score</TableCell>
-//               <TableCell>Edit</TableCell>
-//             </TableRow>
-//           </TableHead>
-//           <TableBody>
-//             {playlist.map((track, index) => (
-//               <TableRow key={track.id}>
-//                 <TableCell>
-//                   <IconButton onClick={() => playTrack(index)}>
-//                     <PlayArrowIcon />
-//                   </IconButton>
-//                 </TableCell>
-//                 <TableCell>{track.title || "Unknown Title"}</TableCell>
-//                 <TableCell>{track.artist || "Unknown Artist"}</TableCell>
-//                 <TableCell>{track.release || "Unknown Album"}</TableCell>
-//                 <TableCell>{track.score || "UnScored"}</TableCell>
-//                 <TableCell>
-//                   <IconButton onClick={() => handleEditClick(track)}>
-//                     <EditIcon />
-//                   </IconButton>
-//                 </TableCell>
-//               </TableRow>
-//             ))}
-//           </TableBody>
-//         </Table>
-//       </TableContainer>
-
-//       {editingTrack && (
-//         <EditTrack
-//           open={!!editingTrack}
-//           track={editingTrack}
-//           onClose={handleCloseModal}
-//         />
-//       )}
-//     </>
-//   );
-// };
-
-// export default LibraryPage;
