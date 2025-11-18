@@ -1,0 +1,918 @@
+import * as React from "react";
+import { load } from "@tauri-apps/plugin-store";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import {
+  FolderPlus,
+  RefreshCw,
+  Trash2,
+  Folder,
+  Save,
+  RotateCcw,
+  ExternalLink,
+  Pin,
+  Keyboard,
+  Info,
+} from "lucide-react";
+import { useSettingsStore } from "@/stores/settingStore";
+import { useLibraryStore } from "@/stores/libraryStore";
+import { api } from "@/lib/api";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { openPath as openOpener } from "@tauri-apps/plugin-opener";
+import { appDataDir } from "@tauri-apps/api/path";
+import { ModeToggle } from "@/components/theme/ModeToggle";
+import { cn } from "@/lib/utils";
+import { useFrontendConfig, type StartPage } from "@/hooks/useFrontendConfig";
+import { getName, getVersion } from "@tauri-apps/api/app";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+
+interface AppConfig {
+  log_prefix: string;
+  log_level: "trace" | "debug" | "info" | "warn" | "error";
+  store_base: string;
+  song_store: string;
+  playlist_store: string;
+  recent_store: string;
+  release_cover_store: string;
+  lyric_store: string;
+  single_song_store: string;
+  listen_paths: string[];
+  debounce_timeout_ms: number;
+  supported_audio_extensions: string[];
+  theme: "dark" | "light" | "system";
+}
+
+interface EditableConfig {
+  log_level: AppConfig["log_level"];
+  debounce_timeout_ms: number;
+  supported_audio_extensions: string[];
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
+export function SettingsPage() {
+  const { t } = useTranslation();
+  const { watchedDirs, isLoading, setWatchedDirs, setLoading } =
+    useSettingsStore();
+  const { setSongs, setArtists, setReleases } = useLibraryStore();
+
+  const { config: frontendConfig, updateConfig: updateFrontendConfig } =
+    useFrontendConfig();
+
+  const [appVersion, setAppVersion] = React.useState<string>("");
+  const [appName, setAppName] = React.useState<string>("");
+
+  const [store, setStore] = React.useState<Awaited<
+    ReturnType<typeof load>
+  > | null>(null);
+
+  const [config, setConfig] = React.useState<Partial<EditableConfig>>({});
+  const [originalConfig, setOriginalConfig] = React.useState<
+    Partial<EditableConfig>
+  >({});
+  const [isConfigLoading, setIsConfigLoading] = React.useState(true);
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  const [dirToRemove, setDirToRemove] = React.useState<string | null>(null);
+  const [isRemoving, setIsRemoving] = React.useState(false);
+  const [configDir, setConfigDir] = React.useState<string>("");
+
+  React.useEffect(() => {
+    const initStore = async () => {
+      try {
+        const appDataPath = await appDataDir();
+        setConfigDir(appDataPath);
+
+        const storeInstance = await load("store.json", {
+          autoSave: false,
+          defaults: {},
+        });
+        setStore(storeInstance);
+
+        const [name, version] = await Promise.all([getName(), getVersion()]);
+        setAppName(name);
+        setAppVersion(version);
+      } catch (e) {
+        toast.error("Failed to initialize store", {
+          description: getErrorMessage(e),
+        });
+      }
+    };
+    initStore();
+  }, []);
+
+  const loadConfig = React.useCallback(async () => {
+    if (!store) return;
+
+    setIsConfigLoading(true);
+    try {
+      const logLevel = await store.get<AppConfig["log_level"]>("log_level");
+      const debounceTimeout = await store.get<number>("debounce_timeout_ms");
+      const audioExtensions = await store.get<string[]>(
+        "supported_audio_extensions"
+      );
+
+      const loadedConfig: Partial<EditableConfig> = {
+        log_level: logLevel || "info",
+        debounce_timeout_ms: debounceTimeout || 2000,
+        supported_audio_extensions: audioExtensions || ["mp3", "flac", "wav"],
+      };
+
+      setConfig(loadedConfig);
+      setOriginalConfig(loadedConfig);
+    } catch (e: unknown) {
+      toast.error(t("Failed to load config"), {
+        description: getErrorMessage(e),
+      });
+    } finally {
+      setIsConfigLoading(false);
+    }
+  }, [store, t]);
+
+  React.useEffect(() => {
+    if (store) {
+      loadConfig();
+    }
+  }, [store, loadConfig]);
+
+  const refreshDirs = async () => {
+    setLoading(true);
+    try {
+      const [dirs, songs, artists, releases] = await Promise.all([
+        api.getGlobDirs(),
+        api.getAllSongs(),
+        api.getAllArtists(),
+        api.getAllReleases(),
+      ]);
+      setWatchedDirs(dirs);
+      setSongs(songs);
+      setArtists(artists);
+      setReleases(releases);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddDirectory = async () => {
+    try {
+      const result = await openDialog({
+        directory: true,
+        multiple: false,
+        title: t("Select Listen Directory"),
+      });
+      if (typeof result === "string" && result.trim() !== "") {
+        setLoading(true);
+        await api.addDir(result);
+        await refreshDirs();
+        toast.success(t("Added Successfully"), {
+          description: t(
+            "Added directory: {{dir}}. Library is updating in the background...",
+            { dir: result }
+          ),
+        });
+      }
+    } catch (e: unknown) {
+      toast.error(t("Failed to add directory"), {
+        description: `${getErrorMessage(e)}`,
+      });
+      setLoading(false);
+    }
+  };
+
+  const handleOpenDirectory = async (dir: string) => {
+    try {
+      await openOpener(dir);
+    } catch (e: unknown) {
+      toast.error(t("Failed to open directory"), {
+        description: `${getErrorMessage(e)}`,
+      });
+    }
+  };
+
+  const handleOpenConfigDirectory = async () => {
+    if (!configDir) {
+      toast.error(t("Config directory not available"));
+      return;
+    }
+    try {
+      await openOpener(configDir);
+    } catch (e: unknown) {
+      toast.error(t("Failed to open config directory"), {
+        description: `${getErrorMessage(e)}`,
+      });
+    }
+  };
+
+  const handleRemoveDirectory = (dir: string, isSingleDir: boolean) => {
+    if (isSingleDir) {
+      toast.error(t("Cannot Remove"), {
+        description: t(
+          "This is your 'single' directory, it cannot be removed."
+        ),
+      });
+      return;
+    }
+    setDirToRemove(dir);
+  };
+
+  const confirmRemoveDirectory = async () => {
+    if (!dirToRemove) return;
+
+    setIsRemoving(true);
+    try {
+      setLoading(true);
+      await api.removeDir(dirToRemove);
+      await refreshDirs();
+      toast.success(t("Removed Successfully"), {
+        description: t(
+          "Removed directory: {{dir}}. Library is updating in the background...",
+          { dir: dirToRemove }
+        ),
+      });
+    } catch (e: unknown) {
+      toast.error(t("Failed to remove directory"), {
+        description: `${getErrorMessage(e)}`,
+      });
+      setLoading(false);
+    } finally {
+      setIsRemoving(false);
+      setDirToRemove(null);
+    }
+  };
+
+  const handleRefreshLibrary = async () => {
+    toast.info(t("Refreshing"), {
+      description: t("Re-scanning all files in the background..."),
+    });
+    try {
+      await api.refreshLibrary();
+      toast.success(t("Refresh Triggered"), {
+        description: t("Library is updating in the background."),
+      });
+    } catch (e: unknown) {
+      toast.error(t("Refresh Failed"), {
+        description: `${getErrorMessage(e)}`,
+      });
+    }
+  };
+
+  const updateConfigField = <K extends keyof EditableConfig>(
+    key: K,
+    value: EditableConfig[K]
+  ) => {
+    setConfig((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveConfig = async () => {
+    if (!store) {
+      toast.error(t("Store not initialized"));
+      return;
+    }
+    setIsSaving(true);
+    try {
+      if (config.log_level !== undefined) {
+        await store.set("log_level", config.log_level);
+      }
+      if (config.debounce_timeout_ms !== undefined) {
+        await store.set("debounce_timeout_ms", config.debounce_timeout_ms);
+      }
+      if (config.supported_audio_extensions !== undefined) {
+        await store.set(
+          "supported_audio_extensions",
+          config.supported_audio_extensions
+        );
+      }
+
+      await store.save();
+      setOriginalConfig(config);
+      toast.success(t("Config Saved"), {
+        description: t(
+          "Your changes have been saved successfully. Some changes may require restarting to take effect."
+        ),
+      });
+    } catch (e: unknown) {
+      toast.error(t("Failed to save config"), {
+        description: getErrorMessage(e),
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleResetConfig = () => {
+    setConfig(originalConfig);
+    toast.info(t("Reset"), {
+      description: t("Configuration has been reset to init state."),
+    });
+  };
+
+  const hasUnsavedChanges = React.useMemo(() => {
+    return JSON.stringify(config) !== JSON.stringify(originalConfig);
+  }, [config, originalConfig]);
+
+  return (
+    <>
+      {}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">{t("Settings")}</h1>
+          {hasUnsavedChanges && (
+            <span className="text-sm text-muted-foreground">
+              • {t("There are unsaved changes")}
+            </span>
+          )}
+        </div>
+
+        <Tabs defaultValue="library" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="library">{t("Library")}</TabsTrigger>
+            <TabsTrigger value="general">{t("General")}</TabsTrigger>
+            <TabsTrigger value="application">{t("Application")}</TabsTrigger>
+            <TabsTrigger value="appearance">{t("Appearance")}</TabsTrigger>
+            <TabsTrigger value="advanced">{t("Advanced")}</TabsTrigger>
+          </TabsList>
+
+          {}
+          <TabsContent value="library" className="pt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("Music Library Directories")}</CardTitle>
+                <CardDescription>
+                  {t("SoA will monitor these directories for music files.")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-2 mb-4">
+                  <Button onClick={handleAddDirectory} disabled={isLoading}>
+                    <FolderPlus className="mr-2 h-4 w-4" /> {t("Add Directory")}
+                  </Button>
+                  <Button
+                    onClick={handleRefreshLibrary}
+                    disabled={isLoading}
+                    variant="outline"
+                  >
+                    <RefreshCw
+                      className={`mr-2 h-4 w-4 ${
+                        isLoading ? "animate-spin" : ""
+                      }`}
+                    />{" "}
+                    {t("Refresh Library")}
+                  </Button>
+                </div>
+                <Separator className="my-4" />
+                <h4 className="text-sm font-medium mb-2">
+                  {t("Current Watched Directories:")}
+                </h4>
+                <ScrollArea className="h-48 rounded-md border">
+                  <div className="p-4">
+                    {isLoading ? (
+                      <div className="space-y-3">
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                      </div>
+                    ) : watchedDirs.length > 0 ? (
+                      watchedDirs.map((dir, index) => (
+                        <div
+                          key={dir}
+                          className="flex items-center justify-between p-2 hover:bg-muted/50 rounded-lg"
+                        >
+                          <div className="flex items-center min-w-0">
+                            <Folder className="h-4 w-4 mr-2 shrink-0" />
+                            <span className="text-sm truncate" title={dir}>
+                              {dir}
+                            </span>
+                            {index === 0 && (
+                              <span className="ml-2 text-xs font-semibold text-primary px-2 py-0.5 bg-primary/10 rounded-full">
+                                {t("Single")}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-1 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenDirectory(dir)}
+                              disabled={isLoading}
+                              title={t("Open Directory")}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                handleRemoveDirectory(dir, index === 0)
+                              }
+                              disabled={isLoading || index === 0}
+                              className={cn(
+                                "text-destructive hover:text-destructive",
+                                index === 0
+                                  ? "opacity-30 cursor-not-allowed"
+                                  : ""
+                              )}
+                              title={t("Remove Directory")}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center p-4">
+                        {t("No directories are being watched.")}
+                      </p>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {}
+          <TabsContent value="general" className="pt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("General Configuration")}</CardTitle>
+                <CardDescription>
+                  {t("Adjust the application's behavior and performance.")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isConfigLoading ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">
+                        {t("Debounce Timeout (ms)")}
+                      </label>
+                      <Input
+                        type="number"
+                        value={config.debounce_timeout_ms ?? 2000}
+                        onChange={(e) =>
+                          updateConfigField(
+                            "debounce_timeout_ms",
+                            parseInt(e.target.value) || 2000
+                          )
+                        }
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t(
+                          "Time to wait after file changes before re-scanning (in milliseconds)."
+                        )}
+                      </p>
+                    </div>
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">
+                        {t("Log Level")}
+                      </label>
+                      <Select
+                        value={config.log_level ?? "info"}
+                        onValueChange={(value) =>
+                          updateConfigField(
+                            "log_level",
+                            value as EditableConfig["log_level"]
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("Select Log Level")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="trace">{t("Trace")}</SelectItem>
+                          <SelectItem value="debug">{t("Debug")}</SelectItem>
+                          <SelectItem value="info">{t("Info")}</SelectItem>
+                          <SelectItem value="warn">{t("Warn")}</SelectItem>
+                          <SelectItem value="error">{t("Error")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        {t("Set the verbosity of application logs.")}
+                      </p>
+                    </div>
+                    <div className="grid gap-2">
+                      <label className="text-sm font-medium">
+                        {t("Supported Audio Formats")}
+                      </label>
+                      <Input
+                        value={
+                          config.supported_audio_extensions?.join(", ") ?? ""
+                        }
+                        onChange={(e) =>
+                          updateConfigField(
+                            "supported_audio_extensions",
+                            e.target.value.split(",").map((s) => s.trim())
+                          )
+                        }
+                        placeholder="mp3, flac, wav, m4a"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t(
+                          "Comma-separated list of audio file extensions to support."
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2 pt-4">
+                      <Button
+                        onClick={handleSaveConfig}
+                        disabled={isSaving || !hasUnsavedChanges}
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        {isSaving ? t("Saving...") : t("Save Changes")}
+                      </Button>
+                      <Button
+                        onClick={handleResetConfig}
+                        variant="outline"
+                        disabled={isSaving || !hasUnsavedChanges}
+                      >
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        {t("Reset")}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {}
+          <TabsContent value="application" className="pt-6">
+            <div className="space-y-6">
+              {}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Pin className="h-5 w-5" />
+                    {t("Window Behavior")}
+                  </CardTitle>
+                  <CardDescription>
+                    {t("Control how the application window behaves")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label
+                        htmlFor="pin-to-top"
+                        className="text-sm font-medium"
+                      >
+                        {t("Always on Top")}
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        {t("Keep the window above all other windows")}
+                      </p>
+                    </div>
+                    <Switch
+                      id="pin-to-top"
+                      checked={frontendConfig.pinToTop}
+                      onCheckedChange={async (checked: boolean) => {
+                        try {
+                          await updateFrontendConfig("pinToTop", checked);
+                          toast.success(t("Setting updated"));
+                        } catch {
+                          toast.error(t("Failed to update setting"));
+                        }
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Keyboard className="h-5 w-5" />
+                    {t("Keyboard Shortcuts")}
+                  </CardTitle>
+                  <CardDescription>
+                    {t("Customize keyboard shortcuts for playback controls")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="play-key">{t("Play/Pause Key")}</Label>
+                      <Input
+                        id="play-key"
+                        maxLength={1}
+                        value={(frontendConfig.playKey || "").toUpperCase()}
+                        onChange={(e) => {
+                          const raw = e.target.value.slice(-1) || "";
+                          const key = raw.toLowerCase();
+                          if (key.length <= 1) {
+                            updateFrontendConfig("playKey", key || "").catch(
+                              () => {
+                                toast.error(t("Failed to update play key"));
+                              }
+                            );
+                          }
+                        }}
+                        placeholder=""
+                        className="w-20"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="next-key">{t("Next Track Key")}</Label>
+                      <Input
+                        id="next-key"
+                        maxLength={1}
+                        value={(frontendConfig.nextKey || ">").toUpperCase()}
+                        onChange={(e) => {
+                          const raw = e.target.value.slice(-1) || "";
+                          const key = raw.toLowerCase();
+                          if (key.length <= 1) {
+                            updateFrontendConfig("nextKey", key || "").catch(
+                              () => {
+                                toast.error(t("Failed to update next key"));
+                              }
+                            );
+                          }
+                        }}
+                        placeholder=""
+                        className="w-20"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="prev-key">
+                        {t("Previous Track Key")}
+                      </Label>
+                      <Input
+                        id="prev-key"
+                        maxLength={1}
+                        value={(frontendConfig.prevKey || "").toUpperCase()}
+                        onChange={(e) => {
+                          const raw = e.target.value.slice(-1) || "";
+                          const key = raw.toLowerCase();
+                          if (key.length <= 1) {
+                            updateFrontendConfig("prevKey", key || "").catch(
+                              () => {
+                                toast.error(t("Failed to update prev key"));
+                              }
+                            );
+                          }
+                        }}
+                        placeholder=""
+                        className="w-20"
+                      />
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      {t(
+                        "Press these keys anywhere in the app to control playback (single character only)"
+                      )}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("Startup Preferences")}</CardTitle>
+                  <CardDescription>
+                    {t("Choose which page to show when the app starts")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="start-page">
+                      {t("Default Start Page")}
+                    </Label>
+                    <Select
+                      value={frontendConfig.startPage}
+                      onValueChange={async (value: StartPage) => {
+                        try {
+                          await updateFrontendConfig("startPage", value);
+                          toast.success(t("Start page updated"));
+                        } catch {
+                          toast.error(t("Failed to update start page"));
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="start-page">
+                        <SelectValue placeholder={t("Select start page")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="songs">{t("Songs")}</SelectItem>
+                        <SelectItem value="releases">
+                          {t("Releases")}
+                        </SelectItem>
+                        <SelectItem value="artists">{t("Artists")}</SelectItem>
+                        <SelectItem value="playlists">
+                          {t("Playlists")}
+                        </SelectItem>
+                        <SelectItem value="alists">{t("Alists")}</SelectItem>
+                        <SelectItem value="recents">{t("Recents")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {t(
+                        "The application will open to this page when launched"
+                      )}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Info className="h-5 w-5" />
+                    {t("About")}
+                  </CardTitle>
+                  <CardDescription>
+                    {t("Made by J4ckacc with")} ❤️
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">
+                        {t("Application Name:")}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {appName || "SoA"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">
+                        {t("Version:")}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {appVersion || "0.1.0"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">
+                        {t("License:")}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        GPL-3.0
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {}
+          <TabsContent value="appearance" className="pt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("Appearance")}</CardTitle>
+                <CardDescription>
+                  {t(
+                    "Customize the application's appearance and feel. This setting is saved automatically."
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    {t("Toggle Theme")}
+                  </span>
+                  <ModeToggle />
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <Label htmlFor="language">{t("Language")}</Label>
+                  <Select
+                    value={i18n.language}
+                    onValueChange={async (lng) => {
+                      await i18n.changeLanguage(lng);
+                      setTimeout(() => {
+                        toast.success(t("Language changed"), {
+                          description: t(
+                            "Language preference updated successfully"
+                          ),
+                        });
+                      }, 100);
+                    }}
+                  >
+                    <SelectTrigger id="language">
+                      <SelectValue placeholder={t("Select language")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="base92">9A2?VBWl</SelectItem>
+                      <SelectItem value="base100">👘👪👜🐨🐧🐧🐁</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {t("Choose your preferred language for the interface")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {}
+          <TabsContent value="advanced" className="pt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("Advanced Configuration")}</CardTitle>
+                <CardDescription>
+                  {t("Configuration file location:")}{" "}
+                  <code className="text-xs">{configDir}/store.json</code>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {t(
+                    "You can manually edit the configuration file if needed. Be sure to back it up before making changes."
+                  )}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={handleOpenConfigDirectory}
+                  disabled={!configDir}
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  {t("Open Config Directory")}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {}
+      <AlertDialog
+        open={!!dirToRemove}
+        onOpenChange={(open) => !open && setDirToRemove(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("Remove Directory")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("Are you sure you want to remove the following directory?")}
+              <br />
+              <code className="text-sm font-medium">{dirToRemove}</code>
+              <br />
+              {t(
+                "This will not delete files on your hard drive, but will remove them from SoA's music library."
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRemoving}>
+              {t("Cancel")}
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              onClick={confirmRemoveDirectory}
+              disabled={isRemoving}
+            >
+              {isRemoving ? t("Removing...") : t("Confirm Remove")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}

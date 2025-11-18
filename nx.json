@@ -1,0 +1,37 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "defaultBase": "master",
+  "targetDefaults": {
+    "build": {
+      "cache": true,
+      "dependsOn": ["^build"]
+    },
+    "test": { "cache": true },
+    "lint": { "cache": true }
+  },
+  "plugins": [
+    { "plugin": "@nx/vite/plugin", "options": {} },
+    { "plugin": "@nx/eslint/plugin", "options": {} }
+  ],
+  "workspaceLayout": {
+    "appsDir": "amll",
+    "libsDir": "amll"
+  },
+  "projects": {
+    "soa": {
+      "root": ".",
+      "tags": ["app"],
+      "implicitDependencies": ["@applemusic-like-lyrics/react"],
+      "targets": {
+        "tauri:dev": {
+          "executor": "nx:run-commands",
+          "options": { "command": "pnpm tauri dev" }
+        },
+        "tauri:build": {
+          "executor": "nx:run-commands",
+          "options": { "command": "pnpm tauri build" }
+        }
+      }
+    }
+  }
+}

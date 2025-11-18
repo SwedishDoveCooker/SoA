@@ -1,0 +1,196 @@
+
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useLibraryStore } from "@/stores/libraryStore";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, Play, Shuffle, Music, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getArtistCover } from "@/lib/cover";
+import { DataTable } from "@/pages/SongsPage.datatable";
+import { detailPageColumns } from "@/pages/SongsPage.columns";
+import { Song } from "@/types";
+import { toast } from "sonner";
+import { api } from "@/lib/api";
+import { SongViewDialog } from "@/components/shared/SongViewDialog";
+import { usePlayerStore } from "@/stores/playerStore";
+import { useTranslation } from "react-i18next";
+
+export function ArtistDetailPage() {
+  const { t } = useTranslation();
+  const { name } = useParams<{ name: string }>();
+  const navigate = useNavigate();
+  const { artists, songs, isLoading, setSongs, setArtists, setReleases } =
+    useLibraryStore();
+
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [isCoverLoading, setIsCoverLoading] = useState(true);
+  const [viewingSong, setViewingSong] = useState<Song | null>(null);
+  const playerActions = usePlayerStore((state) => state.actions);
+
+  const handleSongSaved = useCallback(async () => {
+    toast.info(t("Refreshing library..."), {
+      description: t("Song metadata has been updated."),
+    });
+    try {
+      const [songs, artists, releases] = await Promise.all([
+        api.getAllSongs(),
+        api.getAllArtists(),
+        api.getAllReleases(),
+      ]);
+      setSongs(songs);
+      setArtists(artists);
+      setReleases(releases);
+      toast.success(t("Library refreshed"));
+    } catch (e) {
+      toast.error(t("Failed to refresh"), { description: String(e) });
+    }
+  }, [setSongs, setArtists, setReleases, t]);
+
+  const artist = useMemo(() => {
+    return artists.find((a) => a.name === decodeURIComponent(name || ""));
+  }, [artists, name]);
+
+  const artistSongs = useMemo(() => {
+    if (!artist) return [];
+    return songs.filter((song) => artist.songs.includes(song.path));
+  }, [artist, songs]);
+
+  useEffect(() => {
+    if (artist) {
+      setIsCoverLoading(true);
+      getArtistCover(artist.name, artist.songs, songs)
+        .then(setCoverUrl)
+        .finally(() => setIsCoverLoading(false));
+    }
+  }, [artist, songs]);
+
+  if (isLoading) {
+    return <Skeleton className="h-96 w-full" />;
+  }
+
+  if (!artist) {
+    return <div>{t("Artist not found")}</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <Button
+        onClick={() => navigate(-1)}
+        variant="ghost"
+        size="sm"
+        className="mb-4"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        {t("Back")}
+      </Button>
+
+      {}
+      <div className="flex gap-6">
+        <div className="relative h-64 w-64 rounded-lg overflow-hidden bg-muted flex items-center justify-center shrink-0">
+          {isCoverLoading ? (
+            <Skeleton className="h-full w-full" />
+          ) : coverUrl ? (
+            <img
+              src={coverUrl}
+              alt={artist.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <Music className="h-24 w-24 text-muted-foreground/30" />
+          )}
+        </div>
+
+        {}
+        <div className="flex flex-col justify-end space-y-4 flex-1">
+          <div>
+            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              {t("Artist")}
+            </p>
+            <h1 className="text-5xl font-bold mt-2">{artist.name}</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {artistSongs.length} {t("songs")}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="lg"
+              className="rounded-full px-8"
+              onClick={() => {
+                if (artist.songs.length > 0) {
+                  playerActions.playQueue(artist.songs, 0);
+                }
+              }}
+              disabled={artist.songs.length === 0}
+            >
+              <Play className="mr-2 h-5 w-5" fill="currentColor" />
+              {t("Play")}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="rounded-full px-8"
+              onClick={() => {
+                if (artist.songs.length > 0) {
+                  const shuffledIndices = [
+                    ...Array(artist.songs.length).keys(),
+                  ].sort(() => Math.random() - 0.5);
+                  const shuffledSongs = shuffledIndices.map(
+                    (i) => artist.songs[i]
+                  );
+                  playerActions.playQueue(shuffledSongs, 0);
+                }
+              }}
+              disabled={artist.songs.length === 0}
+            >
+              <Shuffle className="mr-2 h-5 w-5" />
+              {t("Shuffle")}
+            </Button>
+
+            {}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <MoreHorizontal className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  onClick={() => setViewingSong(artistSongs[0] || null)}
+                  disabled={artistSongs.length === 0}
+                >
+                  {t("View Meta")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+
+      {}
+      <div className="pt-6">
+        <h2 className="text-2xl font-bold mb-4">{t("Songs")}</h2>
+        <DataTable
+          columns={detailPageColumns}
+          data={artistSongs}
+          filterColumn="title"
+          enableContextMenu={true}
+          onSongSaved={handleSongSaved}
+          showTableHeader={false}
+        />
+      </div>
+
+      <SongViewDialog
+        song={viewingSong}
+        open={!!viewingSong}
+        onOpenChange={(open) => !open && setViewingSong(null)}
+      />
+    </div>
+  );
+}

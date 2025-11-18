@@ -1,0 +1,13 @@
+/* LyricsDisplay styles - Simplified since we use conditional rendering */
+
+.amll-lyric-page {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  isolation: isolate;
+  background-color: #222;
+  overflow: hidden;
+  color: white;
+}

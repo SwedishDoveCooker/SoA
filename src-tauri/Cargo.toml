@@ -1,10 +1,10 @@
 [package]
-name = "soa_be"
-version = "0.1.0"
+name = "soa"
+version = "1.0.0-alpha"
 description = "A local music scorer"
 authors = ["Alesso"]
 edition = "2021"
-license = "MIT"
+license = "GPL-3.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -28,18 +28,36 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 lofty = "0.22"
-base64 = "0.22.1"
+# base64 = "0.22.1"
 glob = "0.3.3"
 thiserror = "2.0.16"
-tokio = { version = "1", features = ["full"] }
-futures = "0.3.31"
+# tokio = { version = "1", features = ["full"] }
+# futures = "0.3.31"
 tauri-plugin-store = "2.4.0"
 tauri-plugin-dialog = "2"
-sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio"] }
 dunce = "1.0.5"
 regex = "1.11.2"
 lazy_static = "1.5.0"
 walkdir = "2.5.0"
+log = "0.4.28"
+notify = "8.2.0"
+notify-debouncer-mini = "0.7.0"
+tauri-plugin-log = "2"
+toml = "0.9.8"
+chrono = "0.4.42"
+tauri-plugin-prevent-default = "4.0.2"
+tauri-plugin-fs = "2"
+tauri-plugin-shell = "2"
+kira = "0.8.7"
+anyhow = "1.0.86"
+amll-lyric = { path = "../amll/lyric" }
 
 [lints.clippy]
 enum_variant_names = "allow"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-window-state = "2"
+
+[target."cfg(target_os = \"macos\")".dependencies]
+objc2-app-kit = { version = "0.2", features = ["NSColor", "NSWindow"] }
+objc2-foundation = "0.2"

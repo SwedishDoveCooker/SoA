@@ -1,27 +1,32 @@
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { Provider } from "jotai";
 import App from "./App";
-import { Theme } from "@radix-ui/themes";
-import { MusicProvider } from "./hooks/useMusic";
+import "./styles/base.css";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { attachConsole } from "@tauri-apps/plugin-log";
+import { initAppWindow } from "@/lib/windowState";
+import "./i18n";
 
-import "@radix-ui/themes/styles.css";
-import "./base.css";
+async function initializeLog() {
+  await attachConsole();
+  console.log("Tauri Log Console Attached.");
+}
+
+initializeLog();
+initAppWindow();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <Theme
-        accentColor="mint"
-        grayColor="gray"
-        panelBackground="solid"
-        scaling="90%"
-        radius="full"
-      >
-        <MusicProvider>
+    <Provider>
+      <BrowserRouter>
+        {}
+        <ThemeProvider defaultTheme="dark">
           <App />
-        </MusicProvider>
-      </Theme>
-    </BrowserRouter>
+        </ThemeProvider>
+      </BrowserRouter>
+    </Provider>
   </React.StrictMode>
 );

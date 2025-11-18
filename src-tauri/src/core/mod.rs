@@ -1,6 +1,5 @@
 pub mod cmd;
-pub mod consts;
-pub mod error;
-pub mod model;
-pub mod query;
-pub mod setup;
+pub mod library;
+pub mod pic;
+pub mod playback;
+pub mod window;

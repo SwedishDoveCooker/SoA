@@ -2,16 +2,209 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": [
-    "main"
-  ],
+  "windows": ["main"],
   "permissions": [
     "core:default",
+    "core:window:allow-set-always-on-top",
     "opener:default",
     "store:allow-get",
     "store:allow-set",
     "store:allow-save",
     "store:allow-load",
-    "dialog:default"
+    "dialog:default",
+    "log:default",
+    "fs:default",
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [
+        {
+          "path": "$MUSIC/**"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$DESKTOP/**"
+        },
+        {
+          "path": "$DOCUMENT/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCACHE/**"
+        },
+        {
+          "path": "$TEMP/**"
+        },
+        {
+          "path": "$MUSIC/**"
+        }
+      ]
+    },
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "$MUSIC/**"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$DESKTOP/**"
+        },
+        {
+          "path": "$DOCUMENT/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCACHE/**"
+        },
+        {
+          "path": "$TEMP/**"
+        },
+        {
+          "path": "$MUSIC/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-remove",
+      "allow": [
+        {
+          "path": "$MUSIC/**"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$DESKTOP/**"
+        },
+        {
+          "path": "$DOCUMENT/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCACHE/**"
+        },
+        {
+          "path": "$TEMP/**"
+        },
+        {
+          "path": "$MUSIC/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [
+        {
+          "path": "$MUSIC/**"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$DESKTOP/**"
+        },
+        {
+          "path": "$DOCUMENT/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCACHE/**"
+        },
+        {
+          "path": "$TEMP/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [
+        {
+          "path": "$MUSIC/**"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$DESKTOP/**"
+        },
+        {
+          "path": "$DOCUMENT/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCACHE/**"
+        },
+        {
+          "path": "$TEMP/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [
+        {
+          "path": "$MUSIC/**"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$DESKTOP/**"
+        },
+        {
+          "path": "$DOCUMENT/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCACHE/**"
+        },
+        {
+          "path": "$TEMP/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-copy-file",
+      "allow": [
+        {
+          "path": "$MUSIC/**"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$DESKTOP/**"
+        },
+        {
+          "path": "$DOCUMENT/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCACHE/**"
+        },
+        {
+          "path": "$TEMP/**"
+        }
+      ]
+    },
+    "shell:default"
   ]
 }
