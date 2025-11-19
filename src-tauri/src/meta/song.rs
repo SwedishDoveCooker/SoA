@@ -6,7 +6,7 @@ use crate::{
     store::json::entity::{score::Score, song::Song},
 };
 use lofty::{
-    config::{ParseOptions, WriteOptions},
+    config::{ParseOptions, ParsingMode, WriteOptions},
     file::AudioFile,
     picture::{MimeType, Picture, PictureType},
     prelude::{ItemKey, TaggedFileExt},
@@ -72,7 +72,12 @@ impl Song {
     }
 
     pub fn write_tags(&self, new_cover_path: Option<&PathBuf>) -> CoreResult<()> {
-        let mut tagged_file = Probe::open(&self.path)?.read()?;
+        // Use relaxed parsing mode to handle files with invalid MIME types
+        let parse_options = ParseOptions::new()
+            .read_properties(true)
+            .parsing_mode(ParsingMode::Relaxed);
+
+        let mut tagged_file = Probe::open(&self.path)?.options(parse_options).read()?;
 
         let tag_type = tagged_file.primary_tag_type();
         let tag = tagged_file.tag_mut(tag_type).ok_or_else(|| {
