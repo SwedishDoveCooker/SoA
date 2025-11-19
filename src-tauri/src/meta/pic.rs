@@ -6,7 +6,7 @@ use crate::{
     },
     store::json::entity::song::Song,
 };
-use lofty::{picture::Picture, prelude::*, probe::Probe};
+use lofty::{config::ParseOptions, picture::Picture, prelude::*, probe::Probe};
 use log::debug;
 use std::path::{Path, PathBuf};
 
@@ -15,7 +15,12 @@ const PIC_SUFFIXES: [&str; 7] = ["jpg", "jpeg", "png", "bmp", "gif", "webp", "ti
 #[allow(unused)]
 impl Song {
     pub fn get_release_art(&self) -> CoreResult<Option<Picture>> {
-        let tagged_file = Probe::open(&self.path)?.read()?;
+        // Use relaxed parsing mode to handle files with invalid MIME types
+        let parse_options = ParseOptions::new()
+            .read_properties(true)
+            .parsing_mode(lofty::config::ParsingMode::Relaxed);
+
+        let tagged_file = Probe::open(&self.path)?.options(parse_options).read()?;
         let tag = tagged_file
             .primary_tag()
             .ok_or_else(|| {
