@@ -64,26 +64,29 @@ impl PicOp {
             //         _ => "img",
             //     }
             // ));
-            let cover_path = cache_path.with_extension(
-                match picture
-                    .mime_type()
-                    .ok_or_else(|| {
-                        CoreError::FsError(format!(
-                            "Invalid mime type for picture in file: {:?}",
-                            &song.path
-                        ))
-                    })?
-                    .as_str()
-                {
-                    "image/jpeg" => "jpg",
-                    "image/png" => "png",
-                    "image/bmp" => "bmp",
-                    "image/gif" => "gif",
-                    "image/webp" => "webp",
-                    "image/tiff" => "tiff",
-                    _ => "img",
-                },
-            );
+            // Handle invalid MIME types gracefully by using a default extension
+            let extension = picture
+                .mime_type()
+                .and_then(|mime| {
+                    Some(match mime.as_str() {
+                        "image/jpeg" => "jpg",
+                        "image/png" => "png",
+                        "image/bmp" => "bmp",
+                        "image/gif" => "gif",
+                        "image/webp" => "webp",
+                        "image/tiff" => "tiff",
+                        _ => "img",
+                    })
+                })
+                .unwrap_or_else(|| {
+                    debug!(
+                        "Invalid or missing MIME type for picture in file: {:?}, using default extension",
+                        &song.path
+                    );
+                    "img"
+                });
+
+            let cover_path = cache_path.with_extension(extension);
             debug!("Writing cover art to {:?}", &cover_path);
             fs::write(cover_path, &picture.data())?;
             return Ok(true);
