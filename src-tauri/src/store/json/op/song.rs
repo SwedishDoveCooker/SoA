@@ -27,7 +27,7 @@ impl SongOp {
             .get(&Song::sample(file.clone()))
             .cloned()
             .ok_or_else(|| {
-                CoreError::OtherError(format!("Song with path {:?} not found in the store", file))
+                CoreError::OtherError(format!("Song with path {file:?} not found in the store"))
             })
     }
 
@@ -114,7 +114,7 @@ impl SongOp {
                 .remove(&Song::sample(file.clone()))
                 .then_some(())
                 .ok_or_else(|| {
-                    CoreError::OtherError(format!("Remove file with path {:?} not found", file))
+                    CoreError::OtherError(format!("Remove file with path {file:?} not found"))
                 })
         })?;
         self.sm.lock().unwrap().save(&existing_songs)

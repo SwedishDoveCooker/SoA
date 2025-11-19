@@ -61,7 +61,7 @@ impl ReleaseController {
 
     pub fn list_all(&self) -> CoreResult<Vec<Release>> {
         let mut vec = self.op.list_all()?;
-        vec.sort_by(|a, b| a.cmp(&b));
+        vec.sort();
         Ok(vec)
     }
 }

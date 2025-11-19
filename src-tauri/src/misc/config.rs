@@ -162,7 +162,7 @@ pub fn get(app: &AppHandle<Wry>) -> CoreResult<Config> {
     let store = app.store(path).unwrap();
     let json_val = serde_json::Value::Object(store.entries().into_iter().collect());
     let config: Config = serde_json::from_value(json_val)
-        .map_err(|e| CoreError::OtherError(format!("Failed to deserialize config: {}", e)))?;
+        .map_err(|e| CoreError::OtherError(format!("Failed to deserialize config: {e}")))?;
     Ok(config)
 }
 
@@ -182,7 +182,7 @@ where
         });
         store
             .save()
-            .map_err(|e| CoreError::OtherError(format!("Failed to save modified config: {}", e)))?;
+            .map_err(|e| CoreError::OtherError(format!("Failed to save modified config: {e}")))?;
     }
     Ok(())
 }

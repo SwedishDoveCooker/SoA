@@ -93,9 +93,9 @@ impl SongController {
                 (added, common, removed)
             },
         );
-        debug!("added files: {:#?}", added_files);
-        debug!("common files: {:#?}", common_files);
-        debug!("removed files: {:#?}", removed_files);
+        debug!("added files: {added_files:#?}");
+        debug!("common files: {common_files:#?}");
+        debug!("removed files: {removed_files:#?}");
         let (mut song_infos, expired_song_infos) = common_files.iter().fold(
             (Vec::<Song>::new(), Vec::<Song>::new()),
             |(mut valid_songs, mut expired_songs), file| {
@@ -107,13 +107,13 @@ impl SongController {
                             match Song::from_path(file, song.score) {
                                 Ok(updated_song) => valid_songs.push(updated_song),
                                 Err(e) => {
-                                    warn!("Failed to re-parse updated file {:?}: {:?}", file, e);
+                                    warn!("Failed to re-parse updated file {file:?}: {e:?}");
                                 }
                             }
                         }
                     },
                     Err(e) => {
-                        error!("Failed to locate cached song {:?}: {:?}", file, e);
+                        error!("Failed to locate cached song {file:?}: {e:?}");
                     }
                 }
                 (valid_songs, expired_songs)
@@ -125,17 +125,14 @@ impl SongController {
         let mut failed_files = Vec::new();
         let mut processed = 0;
 
-        info!(
-            "Processing {} new files in batches of {}",
-            total_new_files, BATCH_SIZE
-        );
+        info!("Processing {total_new_files} new files in batches of {BATCH_SIZE}");
 
         for chunk in added_files.chunks(BATCH_SIZE) {
             for file in chunk {
                 match Song::from_path(file, None) {
                     Ok(song) => song_infos.push(song),
                     Err(e) => {
-                        warn!("Skipping file {:?} due to parse error: {:?}", file, e);
+                        warn!("Skipping file {file:?} due to parse error: {e:?}");
                         failed_files.push(file.clone());
                     }
                 }
@@ -145,9 +142,9 @@ impl SongController {
             progress_callback(processed, total_new_files);
 
             if processed % (BATCH_SIZE * 5) == 0 || processed == total_new_files {
-                song_infos.sort_by(|a, b| a.cmp(&b));
+                song_infos.sort();
                 self.op.save_all(&song_infos);
-                debug!("Saved progress: {}/{} files", processed, total_new_files);
+                debug!("Saved progress: {processed}/{total_new_files} files");
             }
         }
 
@@ -158,14 +155,14 @@ impl SongController {
             );
         }
 
-        song_infos.sort_by(|a, b| a.cmp(&b));
+        song_infos.sort();
         self.op.save_all(&song_infos);
         Ok(song_infos)
     }
 
     pub fn get_all(&self) -> CoreResult<Vec<Song>> {
         let mut vec = self.op.list_all()?;
-        vec.sort_by(|a, b| a.cmp(&b));
+        vec.sort();
         Ok(vec)
     }
 
@@ -235,13 +232,13 @@ impl SongController {
             match Song::from_path(file, None) {
                 Ok(song) => song_infos.push(song),
                 Err(e) => {
-                    warn!("Failed to parse file {:?}: {:?}", file, e);
+                    warn!("Failed to parse file {file:?}: {e:?}");
                     failed_count += 1;
                 }
             }
         }
         if failed_count > 0 {
-            info!("Skipped {} files due to parse errors", failed_count);
+            info!("Skipped {failed_count} files due to parse errors");
         }
         if !song_infos.is_empty() {
             self.op.add_save(&song_infos)?;

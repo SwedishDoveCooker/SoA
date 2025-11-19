@@ -29,8 +29,7 @@ impl PlaylistOp {
             Ok(())
         } else {
             Err(CoreError::OtherError(format!(
-                "Playlist with name {:?} already exists in the store",
-                name
+                "Playlist with name {name:?} already exists in the store"
             )))
         }
     }
@@ -38,7 +37,7 @@ impl PlaylistOp {
     pub fn list_all(&self) -> CoreResult<Vec<Playlist>> {
         let lists = self.sm.lock().unwrap().load()?;
         let mut vec = lists.iter().cloned().collect::<Vec<_>>();
-        vec.sort_by(|a, b| a.cmp(&b));
+        vec.sort();
         Ok(vec)
     }
 
@@ -62,8 +61,7 @@ impl PlaylistOp {
             .cloned()
             .ok_or_else(|| {
                 CoreError::OtherError(format!(
-                    "Playlist with name {:?} not found in the store",
-                    name
+                    "Playlist with name {name:?} not found in the store"
                 ))
             })
     }
@@ -74,8 +72,7 @@ impl PlaylistOp {
             playlist.name = new_name.clone();
             if lists.contains(&playlist) {
                 return Err(CoreError::OtherError(format!(
-                    "Playlist with name {:?} already exists in the store",
-                    new_name
+                    "Playlist with name {new_name:?} already exists in the store"
                 )));
             }
             lists.insert(playlist);
@@ -83,8 +80,7 @@ impl PlaylistOp {
             Ok(())
         } else {
             Err(CoreError::OtherError(format!(
-                "Playlist with name {:?} not found in the store",
-                old_name
+                "Playlist with name {old_name:?} not found in the store"
             )))
         }
     }
@@ -107,8 +103,7 @@ impl PlaylistOp {
             Ok(())
         } else {
             Err(CoreError::OtherError(format!(
-                "Playlist with name {:?} not found in the store",
-                name
+                "Playlist with name {name:?} not found in the store"
             )))
         }
     }
@@ -121,8 +116,7 @@ impl PlaylistOp {
                 .then_some(())
                 .ok_or_else(|| {
                     CoreError::OtherError(format!(
-                        "Playlist with name {:?} not found in the store",
-                        name
+                        "Playlist with name {name:?} not found in the store"
                     ))
                 })
         })?;
@@ -141,8 +135,7 @@ impl PlaylistOp {
             Ok(())
         } else {
             Err(CoreError::OtherError(format!(
-                "Playlist with name {:?} not found in the store",
-                name
+                "Playlist with name {name:?} not found in the store"
             )))
         }
     }
@@ -157,8 +150,7 @@ impl PlaylistOp {
             Ok(())
         } else {
             Err(CoreError::OtherError(format!(
-                "Playlist with name {:?} not found in the store",
-                name
+                "Playlist with name {name:?} not found in the store"
             )))
         }
     }
@@ -173,8 +165,7 @@ impl PlaylistOp {
             Ok(())
         } else {
             Err(CoreError::OtherError(format!(
-                "Playlist with name {:?} not found in the store",
-                name
+                "Playlist with name {name:?} not found in the store"
             )))
         }
     }
@@ -214,8 +205,7 @@ impl PlaylistOp {
             Ok(())
         } else {
             Err(CoreError::OtherError(format!(
-                "Playlist with name {:?} not found in the store",
-                name
+                "Playlist with name {name:?} not found in the store"
             )))
         }
     }
@@ -229,8 +219,7 @@ impl PlaylistOp {
             Ok(())
         } else {
             Err(CoreError::OtherError(format!(
-                "Playlist with name {:?} not found in the store",
-                name
+                "Playlist with name {name:?} not found in the store"
             )))
         }
     }

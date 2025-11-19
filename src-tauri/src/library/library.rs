@@ -73,7 +73,7 @@ impl Library {
         );
         let single_dir = resolve_path(&app, single_dir)?;
         create_dir_all(&single_dir)?;
-        info!("Single song dir set to {:?}", single_dir);
+        info!("Single song dir set to {single_dir:?}");
         let mut fs = FileSystem::new(debounce_timeout, app.clone());
         fs.add_dir(single_dir.clone())?;
         get_global().get("listen_paths").and_then(|paths| {
@@ -83,10 +83,7 @@ impl Library {
                         let path = PathBuf::from(path_str);
                         if let Ok(resolved_path) = resolve_path(&app, path) {
                             if let Err(e) = fs.add_dir(resolved_path.clone()) {
-                                warn!(
-                                    "Failed to add cached listen path {:?}: {:?}",
-                                    resolved_path, e
-                                );
+                                warn!("Failed to add cached listen path {resolved_path:?}: {e:?}");
                             }
                         }
                     }
@@ -130,7 +127,7 @@ impl Library {
         let total_files = files.len();
         debug!("Fs current dirs: {:?}", self.fs.glob_dirs());
         debug!("current dir paths: {:?}", self.dir_path);
-        debug!("Loading library from {} files", total_files);
+        debug!("Loading library from {total_files} files");
 
         let app_handle = self.app.clone();
         self.song_info =
@@ -147,7 +144,7 @@ impl Library {
                             }),
                         );
                         if processed % 50 == 0 || processed == total {
-                            info!("Scan progress: {}/{} ({}%)", processed, total, progress);
+                            info!("Scan progress: {processed}/{total} ({progress}%)");
                         }
                     }
                 })?;
@@ -180,7 +177,7 @@ impl Library {
         self.song_controller.update_song_info(new_song)?;
         self.song_info.retain(|s| s.path != new_song.path);
         self.song_info.push(new_song.clone());
-        self.song_info.sort_by(|a, b| a.cmp(b));
+        self.song_info.sort();
         self.release_info = self.release_controller.from_songs(&self.song_info);
         self.artist_info = self.artist_controller.from_songs(&self.song_info);
         self.pic_controller.get_release_arts(&self.song_info)?;
@@ -194,7 +191,7 @@ impl Library {
             self.song_info.retain(|s| s.path != song.path);
             self.song_info.push(song.clone());
         });
-        self.song_info.sort_by(|a, b| a.cmp(b));
+        self.song_info.sort();
         self.release_info = self.release_controller.from_songs(&self.song_info);
         self.artist_info = self.artist_controller.from_songs(&self.song_info);
         self.pic_controller.get_release_arts(&self.song_info)?;
@@ -224,7 +221,7 @@ impl Library {
             .cache_lyrics(&vec![updated_song.clone()])?;
         self.song_info.retain(|s| s.path != updated_song.path);
         self.song_info.push(updated_song.clone());
-        self.song_info.sort_by(|a, b| a.cmp(b));
+        self.song_info.sort();
         self.release_info = self.release_controller.from_songs(&self.song_info);
         self.artist_info = self.artist_controller.from_songs(&self.song_info);
 
@@ -238,11 +235,10 @@ impl Library {
         let new_path = self.dir_path[0].join(file);
         if new_path.exists() {
             return Err(CoreError::FsError(format!(
-                "File {:?} already exists in single song dir",
-                new_path
+                "File {new_path:?} already exists in single song dir"
             )));
         }
-        info!("Copying single song from {:?} to {:?}", path, new_path);
+        info!("Copying single song from {path:?} to {new_path:?}");
         copy(path, new_path)?;
         Ok(())
     }
@@ -284,7 +280,7 @@ impl Library {
     }
 
     pub fn on_file_added(&mut self, files: Vec<PathBuf>) -> CoreResult<()> {
-        info!("Detected file changes: {:?}", files);
+        info!("Detected file changes: {files:?}");
         self.song_controller.add_song_infos(files.clone());
         self.song_info = self.song_controller.get_all()?;
         self.release_info = self.release_controller.list_all()?;
@@ -295,7 +291,7 @@ impl Library {
     }
 
     pub fn on_file_modified(&mut self, files: Vec<PathBuf>) -> CoreResult<()> {
-        info!("Detected file changes: {:?}", files);
+        info!("Detected file changes: {files:?}");
         self.song_controller
             .update_song_infos_by_files(files.clone())?;
         self.song_info = self.song_controller.get_all()?;
@@ -307,7 +303,7 @@ impl Library {
     }
 
     pub fn on_file_removed(&mut self, files: Vec<PathBuf>) -> CoreResult<()> {
-        info!("Detected file removals: {:?}", files);
+        info!("Detected file removals: {files:?}");
         self.song_controller
             .remove_song_infos_by_files(files.clone())?;
         self.playlist_controller

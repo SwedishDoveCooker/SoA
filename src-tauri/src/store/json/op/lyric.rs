@@ -29,7 +29,7 @@ impl LyricOp {
             Ok(true)
         } else {
             debug!("No .lrc found for {:?}, creating placeholder", &song.path);
-            fs::write(cache_path, &[])?;
+            fs::write(cache_path, [])?;
             Ok(false)
         }
     }

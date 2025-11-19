@@ -65,13 +65,13 @@ impl Song {
         //     }
         // }
         for suffix in PIC_SUFFIXES.iter() {
-            let cover_path = cover_dir.join(format!("{}.{}", hash, suffix));
+            let cover_path = cover_dir.join(format!("{hash}.{suffix}"));
             if cover_path.exists() {
                 return Ok((true, Some(cover_path), true));
             }
         }
 
-        let placeholder_path = cover_dir.join(format!("{}.img", hash));
+        let placeholder_path = cover_dir.join(format!("{hash}.img"));
         Ok((cover_dir.exists(), Some(placeholder_path), false))
     }
 
@@ -80,12 +80,12 @@ impl Song {
         let hash = get_path_hash(&self.path);
 
         for suffix in PIC_SUFFIXES.iter() {
-            let cover_path = cover_dir.join(format!("{}.{}", hash, suffix));
+            let cover_path = cover_dir.join(format!("{hash}.{suffix}"));
             if cover_path.exists() {
                 return Ok(Some(cover_path));
             }
         }
-        let placeholder_path = cover_dir.join(format!("{}.img", hash));
+        let placeholder_path = cover_dir.join(format!("{hash}.img"));
         if placeholder_path.exists() {
             return Ok(Some(placeholder_path));
         }
@@ -112,7 +112,7 @@ pub fn get_art_dir_path() -> CoreResult<PathBuf> {
                 })?
                 .to_string(),
         ),
-        &Path::new(
+        Path::new(
             // &config
             //     .get("store.release_cover_store")
             //     .and_then(|v| v.as_str().map(|s| s.to_string()))

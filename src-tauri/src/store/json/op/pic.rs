@@ -66,9 +66,7 @@ impl PicOp {
             // ));
             // Handle invalid MIME types gracefully by using a default extension
             let extension = picture
-                .mime_type()
-                .and_then(|mime| {
-                    Some(match mime.as_str() {
+                .mime_type().map(|mime| match mime.as_str() {
                         "image/jpeg" => "jpg",
                         "image/png" => "png",
                         "image/bmp" => "bmp",
@@ -77,7 +75,6 @@ impl PicOp {
                         "image/tiff" => "tiff",
                         _ => "img",
                     })
-                })
                 .unwrap_or_else(|| {
                     debug!(
                         "Invalid or missing MIME type for picture in file: {:?}, using default extension",
@@ -88,8 +85,8 @@ impl PicOp {
 
             let cover_path = cache_path.with_extension(extension);
             debug!("Writing cover art to {:?}", &cover_path);
-            fs::write(cover_path, &picture.data())?;
-            return Ok(true);
+            fs::write(cover_path, picture.data())?;
+            Ok(true)
         } else {
             // let cover_path = cover_dir.join(format!(
             //     "{}-{}.img",
@@ -101,8 +98,8 @@ impl PicOp {
                 "No embedded cover art found, creating empty placeholder at {:?}",
                 &cover_path
             );
-            fs::write(cover_path, &[])?;
-            return Ok(false);
+            fs::write(cover_path, [])?;
+            Ok(false)
         }
     }
 

@@ -32,8 +32,7 @@ impl AlistOp {
             Ok(())
         } else {
             Err(CoreError::OtherError(format!(
-                "Alist with name {:?} already exists in the store",
-                name
+                "Alist with name {name:?} already exists in the store"
             )))
         }
     }
@@ -41,7 +40,7 @@ impl AlistOp {
     pub fn list_all(&self) -> CoreResult<Vec<Alist>> {
         let alists = self.sm.lock().unwrap().load()?;
         let mut vec = alists.iter().cloned().collect::<Vec<_>>();
-        vec.sort_by(|a, b| a.cmp(&b));
+        vec.sort();
         Ok(vec)
     }
 
@@ -64,7 +63,7 @@ impl AlistOp {
             .into_iter()
             .find(|alist| alist.name == name)
             .ok_or_else(|| {
-                CoreError::OtherError(format!("Alist with name {:?} not found in the store", name))
+                CoreError::OtherError(format!("Alist with name {name:?} not found in the store"))
             })
     }
 
@@ -72,8 +71,7 @@ impl AlistOp {
         let mut alists = self.sm.lock().unwrap().load()?;
         if alists.iter().any(|alist| alist.name == new_name) {
             return Err(CoreError::OtherError(format!(
-                "Alist with name {:?} already exists in the store",
-                new_name
+                "Alist with name {new_name:?} already exists in the store"
             )));
         }
         let mut alist = alists
@@ -84,8 +82,7 @@ impl AlistOp {
             })
             .ok_or_else(|| {
                 CoreError::OtherError(format!(
-                    "Alist with name {:?} not found in the store",
-                    old_name
+                    "Alist with name {old_name:?} not found in the store"
                 ))
             })?;
         alist.name = new_name;
@@ -120,8 +117,7 @@ impl AlistOp {
             Ok(())
         } else {
             Err(CoreError::OtherError(format!(
-                "Alist with name {:?} not found in the store",
-                name
+                "Alist with name {name:?} not found in the store"
             )))
         }
     }
@@ -135,7 +131,7 @@ impl AlistOp {
                 created_at: String::new(),
             };
             alists.remove(&alist).then_some(()).ok_or_else(|| {
-                CoreError::OtherError(format!("Alist with name {:?} not found in the store", name))
+                CoreError::OtherError(format!("Alist with name {name:?} not found in the store"))
             })
         })?;
         self.sm.lock().unwrap().save(&alists)?;
@@ -152,8 +148,7 @@ impl AlistOp {
             })
             .ok_or_else(|| {
                 CoreError::OtherError(format!(
-                    "Alist with name {:?} not found in the store",
-                    alist_name
+                    "Alist with name {alist_name:?} not found in the store"
                 ))
             })?;
         alist.elements.push(element);
@@ -172,14 +167,12 @@ impl AlistOp {
             })
             .ok_or_else(|| {
                 CoreError::OtherError(format!(
-                    "Alist with name {:?} not found in the store",
-                    alist_name
+                    "Alist with name {alist_name:?} not found in the store"
                 ))
             })?;
         if index >= alist.elements.len() {
             return Err(CoreError::OtherError(format!(
-                "Index {} out of bounds for alist {:?}",
-                index, alist_name
+                "Index {index} out of bounds for alist {alist_name:?}"
             )));
         }
         alist.elements.remove(index);
@@ -198,8 +191,7 @@ impl AlistOp {
             })
             .ok_or_else(|| {
                 CoreError::OtherError(format!(
-                    "Alist with name {:?} not found in the store",
-                    alist_name
+                    "Alist with name {alist_name:?} not found in the store"
                 ))
             })?;
         let mut sorted_indices = indices;
@@ -207,8 +199,7 @@ impl AlistOp {
         sorted_indices.iter().try_for_each(|&index| {
             if index >= alist.elements.len() {
                 return Err(CoreError::OtherError(format!(
-                    "Index {} out of bounds for alist {:?}",
-                    index, alist_name
+                    "Index {index} out of bounds for alist {alist_name:?}"
                 )));
             }
             alist.elements.remove(index);
@@ -229,8 +220,7 @@ impl AlistOp {
             })
             .ok_or_else(|| {
                 CoreError::OtherError(format!(
-                    "Alist with name {:?} not found in the store",
-                    alist_name
+                    "Alist with name {alist_name:?} not found in the store"
                 ))
             })?;
         alist.elements.retain(|e| e != &element);
@@ -253,8 +243,7 @@ impl AlistOp {
             })
             .ok_or_else(|| {
                 CoreError::OtherError(format!(
-                    "Alist with name {:?} not found in the store",
-                    alist_name
+                    "Alist with name {alist_name:?} not found in the store"
                 ))
             })?;
         let element_set: HashSet<Aelement> = elements.into_iter().collect();
@@ -274,8 +263,7 @@ impl AlistOp {
             })
             .ok_or_else(|| {
                 CoreError::OtherError(format!(
-                    "Alist with name {:?} not found in the store",
-                    alist_name
+                    "Alist with name {alist_name:?} not found in the store"
                 ))
             })?;
         alist.elements.clear();
@@ -296,8 +284,7 @@ impl AlistOp {
             .find(|alist| alist.name == alist_name)
             .ok_or_else(|| {
                 CoreError::OtherError(format!(
-                    "Alist with name {:?} not found in the store",
-                    alist_name
+                    "Alist with name {alist_name:?} not found in the store"
                 ))
             })?;
         let songs = alist
@@ -307,11 +294,9 @@ impl AlistOp {
                 Aelement::Song(song) => Some(vec![song.path]),
                 Aelement::Playlist(playlist) => Some(playlist.songs),
                 Aelement::Release(release) => {
-                    Some(release.songs.iter().map(|s| PathBuf::from(s)).collect())
+                    Some(release.songs.iter().map(PathBuf::from).collect())
                 }
-                Aelement::Artist(artist) => {
-                    Some(artist.songs.iter().map(|s| PathBuf::from(s)).collect())
-                }
+                Aelement::Artist(artist) => Some(artist.songs.iter().map(PathBuf::from).collect()),
                 _ => None,
             })
             .flatten()
@@ -326,8 +311,7 @@ impl AlistOp {
             .find(|alist| alist.name == alist_name)
             .ok_or_else(|| {
                 CoreError::OtherError(format!(
-                    "Alist with name {:?} not found in the store",
-                    alist_name
+                    "Alist with name {alist_name:?} not found in the store"
                 ))
             })?;
         Ok(alist.elements)
@@ -353,8 +337,7 @@ impl AlistOp {
             })
             .ok_or_else(|| {
                 CoreError::OtherError(format!(
-                    "Alist with name {:?} not found in the store",
-                    alist_name
+                    "Alist with name {alist_name:?} not found in the store"
                 ))
             })?;
         let playlist = Playlist {
@@ -366,10 +349,10 @@ impl AlistOp {
                     Aelement::Song(song) => Some(vec![song.path]),
                     Aelement::Playlist(playlist) => Some(playlist.songs),
                     Aelement::Release(release) => {
-                        Some(release.songs.iter().map(|s| PathBuf::from(s)).collect())
+                        Some(release.songs.iter().map(PathBuf::from).collect())
                     }
                     Aelement::Artist(artist) => {
-                        Some(artist.songs.iter().map(|s| PathBuf::from(s)).collect())
+                        Some(artist.songs.iter().map(PathBuf::from).collect())
                     }
                     _ => None,
                 })

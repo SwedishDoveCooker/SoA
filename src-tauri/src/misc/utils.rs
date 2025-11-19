@@ -33,7 +33,7 @@ pub fn sanitize(input: &String) -> String {
 
 pub fn get_time(path: &PathBuf) -> (String, String) {
     fs::metadata(path)
-        .and_then(|meta| Ok((meta.created(), meta.modified())))
+        .map(|meta| (meta.created(), meta.modified()))
         .map(|(created, updated)| {
             let created_datetime: DateTime<Local> =
                 created.unwrap_or(SystemTime::UNIX_EPOCH).into();

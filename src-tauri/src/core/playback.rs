@@ -83,7 +83,7 @@ impl PlaybackService {
             .lock()
             .unwrap()
             .play(sound_data)
-            .map_err(|e| CoreError::OtherError(format!("Failed to play sound: {}", e)))?;
+            .map_err(|e| CoreError::OtherError(format!("Failed to play sound: {e}")))?;
 
         *self.sound_handle.lock().unwrap() = Some(handle);
         *self.current_path.lock().unwrap() = Some(path.clone());
@@ -97,7 +97,7 @@ impl PlaybackService {
                     path: path.clone(),
                 },
             )
-            .map_err(|e| CoreError::TauriError(e))?;
+            .map_err(CoreError::TauriError)?;
 
         Ok(())
     }
@@ -141,17 +141,17 @@ impl PlaybackService {
     }
 
     pub fn seek(&mut self, position_seconds: f32) -> CoreResult<()> {
-        debug!("PlaybackService: seek to {}", position_seconds);
+        debug!("PlaybackService: seek to {position_seconds}");
         if let Some(handle) = self.sound_handle.lock().unwrap().as_mut() {
             handle
                 .seek_to(position_seconds as f64)
-                .map_err(|e| CoreError::OtherError(format!("Failed to seek: {}", e)))?;
+                .map_err(|e| CoreError::OtherError(format!("Failed to seek: {e}")))?;
         }
         Ok(())
     }
 
     pub fn set_volume(&mut self, volume: f32) {
-        debug!("PlaybackService: set_volume to {}", volume);
+        debug!("PlaybackService: set_volume to {volume}");
         if let Some(handle) = self.sound_handle.lock().unwrap().as_mut() {
             handle.set_volume(volume as f64, Tween::default()).ok();
         }

@@ -90,11 +90,11 @@ impl ReleaseOp {
                 if let Some(release_title) = &song.release {
                     let key = (release_title.clone(), song.artist.clone());
                     acc.entry(key)
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(song.path.to_string_lossy().to_string());
                 } else {
                     acc.entry(("unknown_release".to_string(), song.artist.clone()))
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(song.path.to_string_lossy().to_string());
                 }
                 acc
@@ -108,7 +108,7 @@ impl ReleaseOp {
                 songs: song_paths.clone(),
             })
             .collect::<Vec<_>>();
-        vec.sort_by(|a, b| a.cmp(&b));
+        vec.sort();
         vec
     }
 
@@ -119,13 +119,11 @@ impl ReleaseOp {
             let song = Song::from_path(file, None)?;
             releases.iter().for_each(|release| {
                 if let Some(release_title) = &song.release {
-                    if release.title == *release_title && release.artist == song.artist {
-                        return;
-                    }
+                    if release.title == *release_title && release.artist == song.artist {}
                 }
             });
             songs.insert(song).then_some(()).ok_or_else(|| {
-                CoreError::OtherError(format!("Add song with path {:?} already exists", file))
+                CoreError::OtherError(format!("Add song with path {file:?} already exists"))
             })
         });
         self.sm.lock().unwrap().save(&songs)
@@ -137,9 +135,7 @@ impl ReleaseOp {
             HashMap::<(String, Option<String>), Vec<String>>::new(),
             |mut acc, release| {
                 let key = (release.title.clone(), release.artist.clone());
-                acc.entry(key)
-                    .or_insert_with(Vec::new)
-                    .extend(release.songs.clone());
+                acc.entry(key).or_default().extend(release.songs.clone());
                 acc
             },
         );

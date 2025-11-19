@@ -24,20 +24,19 @@ impl Song {
             .read_properties(true)
             .parsing_mode(lofty::config::ParsingMode::Relaxed);
 
-        let tagged_file = match Probe::open(&path) {
+        let tagged_file = match Probe::open(path) {
             Ok(probe) => match probe.options(parse_options).read() {
                 Ok(file) => file,
                 Err(e) => {
                     // If reading fails, try to get basic info without tags
                     warn!(
-                        "Failed to read tags from {:?}: {:?}. Attempting to get basic info.",
-                        path, e
+                        "Failed to read tags from {path:?}: {e:?}. Attempting to get basic info."
                     );
                     return Err(CoreError::LoftyError(e));
                 }
             },
             Err(e) => {
-                warn!("Failed to open file {:?}: {:?}", path, e);
+                warn!("Failed to open file {path:?}: {e:?}");
                 return Err(CoreError::LoftyError(e));
             }
         };
@@ -102,14 +101,14 @@ impl Song {
 
         if let Some(score) = &self.score {
             let score_str = serde_json::to_string(score)
-                .map_err(|e| CoreError::OtherError(format!("Failed to serialize score: {}", e)))?;
+                .map_err(|e| CoreError::OtherError(format!("Failed to serialize score: {e}")))?;
             tag.insert(TagItem::new(ItemKey::Comment, ItemValue::Text(score_str)));
         } else {
             tag.remove_key(&ItemKey::Comment);
         }
 
         if let Some(path) = new_cover_path {
-            warn!("Setting new cover from path: {:?}", path);
+            warn!("Setting new cover from path: {path:?}");
             let picture_data = fs::read(path)?;
             let mime_type = match path.extension().and_then(|s| s.to_str()) {
                 Some("jpg") | Some("jpeg") => MimeType::Jpeg,
@@ -136,7 +135,7 @@ impl Song {
 
         tagged_file
             .save_to_path(&self.path, WriteOptions::default())
-            .map_err(|e| CoreError::LoftyError(e))?;
+            .map_err(CoreError::LoftyError)?;
 
         Ok(())
     }

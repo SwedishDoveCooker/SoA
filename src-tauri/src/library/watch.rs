@@ -36,7 +36,7 @@ impl DirectoryWatcher {
         let path_buf = path.as_ref().to_path_buf();
         self.watched_paths
             .insert(path_buf.clone())
-            .then(|| ())
+            .then_some(())
             .ok_or(CoreError::FsError("Path already watched".to_string()))?;
         self._debouncer
             .watcher()
@@ -49,7 +49,7 @@ impl DirectoryWatcher {
         self._debouncer.watcher().unwatch(path_buf.as_ref())?;
         self.watched_paths
             .remove(&path_buf)
-            .then(|| ())
+            .then_some(())
             .ok_or(CoreError::FsError("Path not being watched".to_string()))?;
         Ok(())
     }

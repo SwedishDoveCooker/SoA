@@ -25,13 +25,11 @@ impl ArtistOp {
         let mut artist_map: HashMap<String, Vec<String>> =
             songs.iter().fold(HashMap::new(), |mut map, song| {
                 if let Some(artist_name) = &song.artist {
-                    let entry = map.entry(artist_name.clone()).or_insert_with(Vec::new);
+                    let entry = map.entry(artist_name.clone()).or_default();
                     entry.push(song.path.to_string_lossy().to_string().clone());
                 } else {
                     // 如果你偏要叫Unknown Artist那我没什么好说的
-                    let entry = map
-                        .entry("Unknown Artist".to_string())
-                        .or_insert_with(Vec::new);
+                    let entry = map.entry("Unknown Artist".to_string()).or_default();
                     entry.push(song.path.to_string_lossy().to_string().clone());
                 }
                 map
@@ -40,7 +38,7 @@ impl ArtistOp {
             .into_iter()
             .map(|(name, songs)| Artist { name, songs })
             .collect::<Vec<_>>();
-        vec.sort_by(|a, b| a.cmp(&b));
+        vec.sort();
         vec
     }
 }

@@ -159,7 +159,7 @@ impl Song {
     pub fn get_lyric_cache_path(&self) -> CoreResult<PathBuf> {
         let lyric_dir = get_lyric_dir_path()?;
         let hash = get_path_hash(&self.path);
-        Ok(lyric_dir.join(format!("{}.lrc", hash)))
+        Ok(lyric_dir.join(format!("{hash}.lrc")))
     }
 }
 
@@ -177,7 +177,7 @@ pub fn get_lyric_dir_path() -> CoreResult<PathBuf> {
                 })?
                 .to_string(),
         ),
-        &Path::new(
+        Path::new(
             get_global()
                 .get("lyric_store")
                 .ok_or_else(|| {

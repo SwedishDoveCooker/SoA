@@ -71,7 +71,7 @@ impl FileSystem {
                         let mut final_modified_files = Vec::new();
                         for file in modified_files {
                             if ignored.remove(&file) {
-                                warn!("FS Watcher: Ignoring modification event for {:?}", file);
+                                warn!("FS Watcher: Ignoring modification event for {file:?}");
                             } else {
                                 final_modified_files.push(file);
                             }
@@ -97,7 +97,7 @@ impl FileSystem {
     }
 
     pub fn ignore_next_modify(&mut self, path: &PathBuf) {
-        info!("FS: Ignoring next modify event for {:?}", path);
+        info!("FS: Ignoring next modify event for {path:?}");
         self.ignored_paths.lock().unwrap().insert(path.clone());
     }
 

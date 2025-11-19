@@ -132,7 +132,7 @@ pub fn run() {
             init_global(store.clone());
             debug!("Config store initialized. Contents: {:#?}", store.entries());
             app.manage(store);
-            let mut library = Library::init(&app.handle())?;
+            let mut library = Library::init(app.handle())?;
             library.load()?;
             let library_state: Arc<Mutex<Library>> = Arc::new(Mutex::new(library));
             app.manage(library_state.clone());

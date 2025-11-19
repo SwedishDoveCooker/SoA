@@ -36,7 +36,7 @@ impl Dir {
         for entry in glob::glob(&pattern).expect("Failed to read glob pattern") {
             match entry {
                 Ok(path) => {
-                    debug!("Found file: {:?}", path);
+                    debug!("Found file: {path:?}");
                     if let Some(ext) = path.extension() {
                         if get_global()
                             .get("supported_audio_extensions")
@@ -51,13 +51,13 @@ impl Dir {
                             .any(|s| s.eq_ignore_ascii_case(ext.to_str().unwrap_or("")))
                         {
                             let (_, updated_at) = get_time(&path);
-                            debug!("Adding audio file: {:?}", path);
+                            debug!("Adding audio file: {path:?}");
                             // self.audio_files.push(path);
                             self.audio_files.insert(path, updated_at);
                         }
                     }
                 }
-                Err(e) => error!("Dir glob error: {:?}", e),
+                Err(e) => error!("Dir glob error: {e:?}"),
             }
         }
         self.audio_files.clone()
