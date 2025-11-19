@@ -19,7 +19,10 @@ const tauriConf = JSON.parse(readFileSync(tauriConfPath, "utf-8"));
 
 console.log("tauri.conf.json content:", tauriConf);
 
-const baseVersion = tauriConf.version;
+let baseVersion = tauriConf.version;
+
+// Strip existing build metadata (+xxx) if present
+baseVersion = baseVersion.replace(/\+.*$/, "");
 
 // Support both standard semver (1.0.0) and prerelease versions (1.0.0-alpha, 1.0.0-beta.1)
 if (!/^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$/.test(baseVersion)) {
