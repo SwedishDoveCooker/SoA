@@ -3,8 +3,8 @@
   "? This action will remove all songs and cannot be undone.": "73$cYod8#-hy*9LF,FvEaM&c.Lozpw/GC8RhN[cWt$s{)TIM,DG$d=4W84h3:A^;D=vYU< ",
   "(No alists yet)": "/0kENRc'V0ttiBjIIp)",
   "(No playlists yet)": "/0kENZ4&);o7A]ZQ,G0clBA",
-  "{{count}} songs_one": "LDG]n/5Llpt1p5/",
-  "{{count}} songs_other": "LDG]n/5Llpt1p55z",
+  "{{loaded}} songs loaded": "LGGPe[a^??{8:AW_GmvnNX4V(nj= ",
+  "{{processed}} / {{total}} files": "LGGbixaM?^t/@?uz,=s2v^dLyygP,#txE!1!U_A",
   "⏰ Start quickreviewing, (": "r^yONKdL)-t_*{^6CzGjUb3Q?gm.W(C+/'",
   "☺️ You've completed": "ra)4f,:0!zqD:{b ,DG]bv4&?aj= ",
   "🌟 Congrads!": "wXwyLj,pymkgVU-P,X",
@@ -269,6 +269,8 @@
   "saving": "IU1J[:3+",
   "Saving...": ">>1J[:3-rjAA",
   "Saving…": ">>1J[:39/(;e",
+  "Scan complete": ">>G$cs2Lykr')vZC",
+  "Scanning library...": ">>G$d=3Qt$7l*9'sC9<ncz))",
   "Score": ">>G]isA",
   "Score Update Failed": ">>G]isSb?WiWAf/G9g0saIaW",
   "Score Updated": ">>G]isSb?WiWAf00",
@@ -285,6 +287,8 @@
   "SoA will monitor these directories for music files.": ">?tZN^bRht7lA<IRIxvjN]3A?^j,)n;UD]Gref3Q?^7jWlS}GM_?[4ScE'o6AZ=",
   "Song \"{{title}}\" has been updated.": "Song \"{{title}}\" has been updated.",
   "Song metadata has been updated.": ">?vYX$46?agN)TZ?,E%:jv2<?ApJ+>O+C9RKSt ",
+  "songCount_one": "IVvYX5cX?StV",
+  "songCount_other": "IVvYX5cX?StV",
   "songEdit.button.cancel": "IVvYX6a^V2AYX?ZRH1hSRhcG4*nz",
   "songEdit.button.save": "IVvYX6a^V2AYX?ZRH1hSk9dn5",
   "songEdit.button.saving": "IVvYX6a^V2AYX?ZRH1hSk9dnV&kI",
@@ -375,6 +379,5 @@
   "Warn": "?e1:O",
   "Window Behavior": "?f1*T7dz!Jj>)Tb%H21",
   "You can manually edit the configuration file if needed. Be sure to back it up before making changes.": "@IvvNSa-rLowA4^.G,S?NTa^V27n*1/GCzvYW#b3?[gR*9LF,Dk.aIScUs7lVw00D]P$NC2j#QuWVu!:H(%>Ozbp#=t_+>NBCW^hef2j#EgOojIP,DG@P#31?^AA",
-  "Your changes have been saved successfully. Some changes may require restarting to take effect.": "@IvwiO2LP.p[oHVlEc1JU52<?ApJ+.%+D]OHkCaM4*t2oP^9G..:NKcWnB7iob%#EA_>NXa.T@sJAL^6I5Zaisd=9[sN*9IP,FRtN]2,c+7j@O2}C{P$",
-  "songCount": "LDG]n/5Gg5r'+>TcG$OHed2j#c9c+.LFEDZaeg3A?[7oiX!9H1k&kGe}"
+  "Your changes have been saved successfully. Some changes may require restarting to take effect.": "@IvwiO2LP.p[oHVlEc1JU52<?ApJ+.%+D]OHkCaM4*t2oP^9G..:NKcWnB7iob%#EA_>NXa.T@sJAL^6I5Zaisd=9[sN*9IP,FRtN]2,c+7j@O2}C{P$"
 }

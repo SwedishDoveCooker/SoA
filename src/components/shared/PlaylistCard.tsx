@@ -221,7 +221,10 @@ export function PlaylistCard({
         </h3>
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <Music className="h-3 w-3" />
-          <span>{t("songCount", { count: playlist.songs.length })}</span>
+          <span>
+            {playlist.songs.length}{" "}
+            {playlist.songs.length === 1 ? "song" : "songs"}
+          </span>
         </p>
       </div>
     </div>

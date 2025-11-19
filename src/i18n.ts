@@ -1,4 +1,3 @@
-
 import resources from "virtual:i18next-loader";
 import i18n from "i18next";
 import ICU from "i18next-icu";
@@ -11,8 +10,8 @@ declare module "i18next" {
 }
 
 i18n
-  .use(initReactI18next)
   .use(ICU)
+  .use(initReactI18next)
   .init({
     resources,
     fallbackLng: "en",

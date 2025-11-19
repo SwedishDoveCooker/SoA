@@ -9,7 +9,7 @@ use crate::{
         op::{sm::StoreManager, song::SongOp},
     },
 };
-use log::{debug, info};
+use log::{debug, error, info, warn};
 use std::{
     collections::HashSet,
     fs::remove_file,
@@ -60,6 +60,18 @@ impl SongController {
 
     /// get song information from cache and update store
     pub fn get_from_cache(&self, files: Vec<PathBuf>) -> CoreResult<Vec<Song>> {
+        self.get_from_cache_with_progress(files, &|_, _| {})
+    }
+
+    /// get song information from cache with progress callback
+    pub fn get_from_cache_with_progress<F>(
+        &self,
+        files: Vec<PathBuf>,
+        progress_callback: &F,
+    ) -> CoreResult<Vec<Song>>
+    where
+        F: Fn(usize, usize),
+    {
         let cached_songs = self.op.list_all()?;
         let cached_files = cached_songs
             .into_iter()
@@ -92,19 +104,60 @@ impl SongController {
                         true => valid_songs.push(song),
                         false => {
                             expired_songs.push(song.clone());
-                            valid_songs.push(Song::from_path(file, song.score).unwrap())
+                            match Song::from_path(file, song.score) {
+                                Ok(updated_song) => valid_songs.push(updated_song),
+                                Err(e) => {
+                                    warn!("Failed to re-parse updated file {:?}: {:?}", file, e);
+                                }
+                            }
                         }
                     },
-                    Err(_) => panic!("114514"),
+                    Err(e) => {
+                        error!("Failed to locate cached song {:?}: {:?}", file, e);
+                    }
                 }
                 (valid_songs, expired_songs)
             },
         );
-        song_infos.extend(
-            added_files
-                .iter()
-                .map(|file| Song::from_path(file, None).unwrap()),
+
+        const BATCH_SIZE: usize = 50;
+        let total_new_files = added_files.len();
+        let mut failed_files = Vec::new();
+        let mut processed = 0;
+
+        info!(
+            "Processing {} new files in batches of {}",
+            total_new_files, BATCH_SIZE
         );
+
+        for chunk in added_files.chunks(BATCH_SIZE) {
+            for file in chunk {
+                match Song::from_path(file, None) {
+                    Ok(song) => song_infos.push(song),
+                    Err(e) => {
+                        warn!("Skipping file {:?} due to parse error: {:?}", file, e);
+                        failed_files.push(file.clone());
+                    }
+                }
+                processed += 1;
+            }
+
+            progress_callback(processed, total_new_files);
+
+            if processed % (BATCH_SIZE * 5) == 0 || processed == total_new_files {
+                song_infos.sort_by(|a, b| a.cmp(&b));
+                self.op.save_all(&song_infos);
+                debug!("Saved progress: {}/{} files", processed, total_new_files);
+            }
+        }
+
+        if !failed_files.is_empty() {
+            info!(
+                "Failed to parse {} files. Check logs for details.",
+                failed_files.len()
+            );
+        }
+
         song_infos.sort_by(|a, b| a.cmp(&b));
         self.op.save_all(&song_infos);
         Ok(song_infos)
@@ -176,11 +229,23 @@ impl SongController {
     }
 
     pub fn add_song_infos(&self, files: Vec<PathBuf>) -> CoreResult<()> {
-        let song_infos = files
-            .iter()
-            .map(|file| Song::from_path(file, None).unwrap())
-            .collect::<Vec<Song>>();
-        self.op.add_save(&song_infos)?;
+        let mut song_infos = Vec::new();
+        let mut failed_count = 0;
+        for file in files.iter() {
+            match Song::from_path(file, None) {
+                Ok(song) => song_infos.push(song),
+                Err(e) => {
+                    warn!("Failed to parse file {:?}: {:?}", file, e);
+                    failed_count += 1;
+                }
+            }
+        }
+        if failed_count > 0 {
+            info!("Skipped {} files due to parse errors", failed_count);
+        }
+        if !song_infos.is_empty() {
+            self.op.add_save(&song_infos)?;
+        }
         Ok(())
     }
 

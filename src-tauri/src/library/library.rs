@@ -127,10 +127,31 @@ impl Library {
 
     pub fn load(&mut self) -> CoreResult<()> {
         let files = self.fs.glob_files();
+        let total_files = files.len();
         debug!("Fs current dirs: {:?}", self.fs.glob_dirs());
         debug!("current dir paths: {:?}", self.dir_path);
-        debug!("Loading library from files: {:?}", files);
-        self.song_info = self.song_controller.get_from_cache(files)?;
+        debug!("Loading library from {} files", total_files);
+
+        let app_handle = self.app.clone();
+        self.song_info =
+            self.song_controller
+                .get_from_cache_with_progress(files, &|processed, total| {
+                    if total > 0 {
+                        let progress = (processed as f32 / total as f32 * 100.0) as u32;
+                        let _ = app_handle.emit(
+                            "scan_progress",
+                            serde_json::json!({
+                                "processed": processed,
+                                "total": total,
+                                "progress": progress
+                            }),
+                        );
+                        if processed % 50 == 0 || processed == total {
+                            info!("Scan progress: {}/{} ({}%)", processed, total, progress);
+                        }
+                    }
+                })?;
+
         self.release_info = self.release_controller.from_songs(&self.song_info);
         self.pic_controller.get_release_arts(&self.song_info)?;
         self.lyric_controller.cache_lyrics(&self.song_info)?;
@@ -138,6 +159,20 @@ impl Library {
         self.playlist = self.playlist_controller.get_all_playlists()?;
         self.alist = self.alist_controller.get_all_alists()?;
         self.recent = self.recent_controller.get_all_recents()?;
+
+        let _ = self.app.emit(
+            "scan_complete",
+            serde_json::json!({
+                "total": total_files,
+                "loaded": self.song_info.len()
+            }),
+        );
+        info!(
+            "Library loaded: {} songs from {} files",
+            self.song_info.len(),
+            total_files
+        );
+
         Ok(())
     }
 

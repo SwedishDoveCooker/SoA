@@ -201,10 +201,7 @@ export function SettingsPage() {
         await api.addDir(result);
         await refreshDirs();
         toast.success(t("Added Successfully"), {
-          description: t(
-            "Added directory: {{dir}}. Library is updating in the background...",
-            { dir: result }
-          ),
+          description: `Added directory: ${result}. Library is updating in the background...`,
         });
       }
     } catch (e: unknown) {
@@ -260,10 +257,7 @@ export function SettingsPage() {
       await api.removeDir(dirToRemove);
       await refreshDirs();
       toast.success(t("Removed Successfully"), {
-        description: t(
-          "Removed directory: {{dir}}. Library is updating in the background...",
-          { dir: dirToRemove }
-        ),
+        description: `Removed directory: ${dirToRemove}. Library is updating in the background...`,
       });
     } catch (e: unknown) {
       toast.error(t("Failed to remove directory"), {

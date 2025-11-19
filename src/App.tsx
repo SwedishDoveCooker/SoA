@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAtomValue } from "jotai";
 import { useEffect } from "react";
@@ -21,6 +20,7 @@ import { PlaylistDetailPage } from "@/pages/PlaylistDetailPage";
 import { AlistDetailPage } from "@/pages/AlistDetailPage";
 import { LibraryLoader } from "@/LibraryLoader";
 import { Toaster } from "@/components/ui/sonner";
+import { ScanProgressIndicator } from "@/components/shared/ScanProgressIndicator";
 import {
   useFrontendConfig,
   useStartPage,
@@ -136,6 +136,7 @@ export default function App() {
         </Route>
       </Routes>
       <Toaster position="bottom-right" />
+      <ScanProgressIndicator />
     </LibraryLoader>
   );
 }

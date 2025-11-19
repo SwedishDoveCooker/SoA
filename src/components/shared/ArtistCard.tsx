@@ -182,7 +182,10 @@ export function ArtistCard({
           </h3>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <Music className="h-3 w-3" />
-            <span>{t("songCount", { count: artist.songs.length })}</span>
+            <span>
+              {artist.songs.length}{" "}
+              {artist.songs.length === 1 ? "song" : "songs"}
+            </span>
           </p>
         </div>
       </div>
