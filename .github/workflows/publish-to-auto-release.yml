@@ -114,16 +114,15 @@ jobs:
           pnpm i --frozen-lockfile --ignore-scripts
           pnpm nx build soa
 
-      # - name: generate dev version
-      #   run: |
-      #     node ./packages/player/scripts/gen-dev-version.mjs
+      - name: generate dev version
+        run: node scripts/gen-dev-version.mjs
 
       - name: build tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: soa-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
+          tagName: soa-v__VERSION__ # the action automatically replaces __VERSION__ with the app version from tauri.conf.json
           releaseName: "soa v__VERSION__"
           releaseBody: |
             ☺️ Latest ${{ github.ref_name }} branch development build.
