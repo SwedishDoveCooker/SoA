@@ -1,5 +1,5 @@
 use crate::misc::error::{CoreError, CoreResult};
-use notify::{FsEventWatcher, RecursiveMode};
+use notify::{RecommendedWatcher, RecursiveMode};
 use notify_debouncer_mini::{new_debouncer, DebouncedEvent, Debouncer};
 use std::{
     // cell::RefCell,
@@ -11,7 +11,7 @@ use std::{
 
 #[derive(Debug)]
 pub struct DirectoryWatcher {
-    _debouncer: Debouncer<FsEventWatcher>,
+    _debouncer: Debouncer<RecommendedWatcher>,
 
     // dirs: Weak<RefCell<HashSet<Dir>>>,
     watched_paths: HashSet<PathBuf>,
