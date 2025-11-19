@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useLibraryStore } from "@/stores/libraryStore";
@@ -187,7 +186,6 @@ export function ReleaseDetailPage() {
         <DataTable
           columns={detailPageColumns}
           data={releaseSongs}
-          filterColumn="title"
           showBorder={false}
           enableContextMenu={true}
           onSongSaved={handleSongSaved}

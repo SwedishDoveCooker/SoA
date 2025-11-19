@@ -97,7 +97,7 @@ export function PlaylistCard({
     try {
       await api.addElementToAlist(alistName, { Playlist: playlist });
       toast.success(t("Added"), {
-        description: t('Playlist added to "{{alistName}}"', { alistName }),
+        description: `Playlist added to "${alistName}"`,
       });
     } catch (error) {
       toast.error(t("Failed to add"), {

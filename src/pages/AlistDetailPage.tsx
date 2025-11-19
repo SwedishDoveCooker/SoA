@@ -381,7 +381,6 @@ export function AlistDetailPage() {
         <DataTable
           columns={detailPageColumns}
           data={alistSongs}
-          filterColumn="title"
           showBorder={false}
           enableContextMenu={false}
           showTableHeader={false}

@@ -70,7 +70,7 @@ export function ArtistCard({
     try {
       await api.addElementToAlist(alistName, { Artist: artist });
       toast.success(t("Added"), {
-        description: t('Artist added to "{{alistName}}"', { alistName }),
+        description: `Artist added to "${alistName}"`,
       });
     } catch (error) {
       toast.error(t("Failed to add"), {

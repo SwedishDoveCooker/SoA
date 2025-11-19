@@ -6,7 +6,7 @@ use crate::{
     store::json::entity::{score::Score, song::Song},
 };
 use lofty::{
-    config::WriteOptions,
+    config::{ParseOptions, WriteOptions},
     file::AudioFile,
     picture::{MimeType, Picture, PictureType},
     prelude::{ItemKey, TaggedFileExt},
@@ -19,7 +19,29 @@ use std::{fs, path::PathBuf};
 #[allow(unused)]
 impl Song {
     pub fn from_path(path: &PathBuf, score: Option<Score>) -> CoreResult<Self> {
-        let tagged_file = Probe::open(&path)?.read()?;
+        // Use custom parse options to be more lenient with invalid metadata
+        let parse_options = ParseOptions::new()
+            .read_properties(true)
+            .parsing_mode(lofty::config::ParsingMode::Relaxed);
+
+        let tagged_file = match Probe::open(&path) {
+            Ok(probe) => match probe.options(parse_options).read() {
+                Ok(file) => file,
+                Err(e) => {
+                    // If reading fails, try to get basic info without tags
+                    warn!(
+                        "Failed to read tags from {:?}: {:?}. Attempting to get basic info.",
+                        path, e
+                    );
+                    return Err(CoreError::LoftyError(e));
+                }
+            },
+            Err(e) => {
+                warn!("Failed to open file {:?}: {:?}", path, e);
+                return Err(CoreError::LoftyError(e));
+            }
+        };
+
         let tag = tagged_file.primary_tag();
         let properties = tagged_file.properties();
 

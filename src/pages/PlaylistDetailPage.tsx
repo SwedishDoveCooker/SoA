@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useCallback, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useLibraryStore } from "@/stores/libraryStore";
@@ -291,7 +290,6 @@ export function PlaylistDetailPage() {
         <DataTable
           columns={detailPageColumns}
           data={playlistSongs}
-          filterColumn="title"
           showBorder={false}
           enableContextMenu={true}
           onSongSaved={refreshPlaylists}

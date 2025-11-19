@@ -1,4 +1,3 @@
-
 import { Skeleton } from "@/components/ui/skeleton";
 import { Release, Song } from "@/types";
 import { Disc, MoreHorizontal, Play } from "lucide-react";
@@ -79,7 +78,7 @@ export function ReleaseCard({
     try {
       await api.addElementToAlist(alistName, { Release: release });
       toast.success(t("Added"), {
-        description: t('Release added to "{{alistName}}"', { alistName }),
+        description: `Release added to "${alistName}"`,
       });
     } catch (error) {
       toast.error(t("Failed to add"), {

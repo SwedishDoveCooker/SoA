@@ -1,4 +1,3 @@
-
 import { useMemo, useState, useCallback } from "react";
 import {
   Card,
@@ -78,7 +77,6 @@ const groupedScoreOptions = [
   },
 ];
 const flatScores = groupedScoreOptions.flatMap((g) => g.scores);
-
 
 const scoreValues: Record<Score, number> = {
   [Score.SuperSmallCup]: 1,
@@ -456,22 +454,6 @@ export function ScorePage() {
                   ))}
                 </div>
               ))}
-              <div className="space-y-1">
-                <h4 className="text-xs font-semibold uppercase text-muted-foreground pt-2">
-                  {t("Unrated")}
-                </h4>
-                <HistogramBar
-                  label={t("Unrated")}
-                  value={stats.unratedCount}
-                  maxValue={stats.maxDistributionCount}
-                  percentage={
-                    (stats.unratedCount /
-                      (stats.totalSongs > 0 ? stats.totalSongs : 1)) *
-                    100
-                  }
-                  onClick={() => setActiveAccordionItem("unrated")}
-                />
-              </div>
             </CardContent>
           </Card>
 

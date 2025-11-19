@@ -58,9 +58,7 @@ export function CoverEditDialog({
   const description = useMemo(() => {
     if (!target)
       return t("Select a new image to override the generated cover.");
-    return t(`Upload a custom image for "{{name}}". We'll cache it locally.`, {
-      name: target.name,
-    });
+    return `Upload a custom image for "${target.name}". We'll cache it locally.`;
   }, [target, t]);
 
   const handlePick = async () => {
@@ -88,9 +86,7 @@ export function CoverEditDialog({
     try {
       await assignCustomCover(target.kind, target.name, selectedPath);
       toast.success(t("Cover updated"), {
-        description: t(`Applied new cover for "{{name}}"`, {
-          name: target.name,
-        }),
+        description: `Applied new cover for "${target.name}"`,
       });
       onOpenChange(false);
     } catch (error) {
@@ -108,9 +104,7 @@ export function CoverEditDialog({
     try {
       await resetCustomCover(target.kind, target.name);
       toast.success(t("Cover reset"), {
-        description: t(`Reverted to auto-cover for "{{name}}"`, {
-          name: target.name,
-        }),
+        description: `Reverted to auto-cover for "${target.name}"`,
       });
       onOpenChange(false);
     } catch (error) {

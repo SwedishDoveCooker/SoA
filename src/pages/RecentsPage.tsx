@@ -1,4 +1,3 @@
-
 import React from "react";
 import { usePlaylistStore } from "@/stores/playlistStore";
 import { useLibraryStore } from "@/stores/libraryStore";
@@ -52,11 +51,7 @@ export function RecentsPage() {
       {isLoading ? (
         <SongsLoadingSkeleton />
       ) : (
-        <DataTable
-          columns={recentsColumnsFixed}
-          data={recentsWithSongData}
-          filterColumn="songData.title"
-        />
+        <DataTable columns={recentsColumnsFixed} data={recentsWithSongData} />
       )}
     </div>
   );

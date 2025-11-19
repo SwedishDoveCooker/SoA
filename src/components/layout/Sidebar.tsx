@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PlaylistEditDialog } from "@/components/shared/PlaylistEditDialog";
 import { AlistEditDialog } from "@/components/shared/AlistEditDialog";
+import { CoverEditDialog } from "@/components/shared/CoverEditDialog";
 import { Alist } from "@/types";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -150,6 +151,12 @@ export function Sidebar({ className }: { className?: string }) {
   const [alistToClear, setAlistToClear] = useState<Alist | null>(null);
   const [isAlistDeleting, setIsAlistDeleting] = useState(false);
   const [isAlistClearing, setIsAlistClearing] = useState(false);
+  const [alistToFreeze, setAlistToFreeze] = useState<Alist | null>(null);
+  const [isFreezing, setIsFreezing] = useState(false);
+  const [coverTarget, setCoverTarget] = useState<{
+    kind: "alist";
+    name: string;
+  } | null>(null);
 
   const refreshPlaylists = useCallback(async () => {
     try {
@@ -319,6 +326,30 @@ export function Sidebar({ className }: { className?: string }) {
     }
   };
 
+  const handleOpenAlistFreezeDialog = (alist: Alist) => {
+    setAlistToFreeze(alist);
+  };
+
+  const handleConfirmAlistFreeze = async () => {
+    if (!alistToFreeze) return;
+    setIsFreezing(true);
+    try {
+      await api.freezeAlist(alistToFreeze.name);
+      toast.success(t("Freezing..."), {
+        description: `Frozen "${alistToFreeze.name}" to a static playlist`,
+      });
+      await refreshPlaylists();
+      await refreshAlists();
+    } catch (error) {
+      toast.error("Freeze failed", {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      setIsFreezing(false);
+      setAlistToFreeze(null);
+    }
+  };
+
   return (
     <>
       <aside
@@ -450,6 +481,18 @@ export function Sidebar({ className }: { className?: string }) {
                       onClick={() => handleOpenAlistRenameDialog(al)}
                     >
                       {t("Edit")}
+                    </ContextMenuItem>
+                    <ContextMenuItem
+                      onClick={() => handleOpenAlistFreezeDialog(al)}
+                    >
+                      {t("Freeze to Playlist")}
+                    </ContextMenuItem>
+                    <ContextMenuItem
+                      onClick={() =>
+                        setCoverTarget({ kind: "alist", name: al.name })
+                      }
+                    >
+                      {t("Change Cover")}
                     </ContextMenuItem>
                     <ContextMenuItem
                       onClick={() => handleOpenAlistClearDialog(al)}
@@ -615,6 +658,43 @@ export function Sidebar({ className }: { className?: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={!!alistToFreeze}
+        onOpenChange={(open) => !open && setAlistToFreeze(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("Freeze Alist")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("This will convert")}
+              <span className="font-bold text-foreground">
+                {alistToFreeze?.name}
+              </span>
+              {t("into a static playlist. Continue?")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isFreezing}>
+              {t("Cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmAlistFreeze}
+              disabled={isFreezing}
+            >
+              {isFreezing ? t("Freezing...") : t("Freeze")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <CoverEditDialog
+        target={coverTarget}
+        open={!!coverTarget}
+        onOpenChange={(open: boolean) => {
+          if (!open) setCoverTarget(null);
+        }}
+      />
     </>
   );
 }

@@ -42,8 +42,8 @@ export function ScanProgressIndicator({
 
           <p className="text-xs text-muted-foreground">
             {isScanning
-              ? t("{{processed}} / {{total}} files", { processed, total })
-              : t("{{loaded}} songs loaded", { loaded: processed })}
+              ? `${processed} / ${total} files`
+              : `${processed} songs loaded`}
           </p>
         </div>
       </div>

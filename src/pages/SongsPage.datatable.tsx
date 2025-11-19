@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -58,7 +57,6 @@ import { useTranslation } from "react-i18next";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  filterColumn?: string;
   showBorder?: boolean;
   enableContextMenu?: boolean;
   onSongSaved?: () => void;
@@ -73,7 +71,6 @@ export interface TableMeta {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  filterColumn = "title",
   showBorder = false,
   enableContextMenu = false,
   onSongSaved,
@@ -85,6 +82,7 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+  const [globalFilter, setGlobalFilter] = React.useState("");
 
   const [editingSong, setEditingSong] = React.useState<Song | null>(null);
   const [viewingSong, setViewingSong] = React.useState<Song | null>(null);
@@ -115,9 +113,7 @@ export function DataTable<TData, TValue>({
       await api.update_song_tags(updatedSong, null);
 
       toast.success(t("Score Updated"), {
-        description: t(`Song "{{title}}" has been updated.`, {
-          title: song.title || "Unknown",
-        }),
+        description: `Song "${song.title || "Unknown"}" has been updated.`,
       });
       onSongSaved?.();
     } catch (e) {
@@ -133,9 +129,22 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const search = filterValue.toLowerCase();
+      const title = (row.getValue("title") as string)?.toLowerCase() || "";
+      const artist = (row.getValue("artist") as string)?.toLowerCase() || "";
+      const release = (row.getValue("release") as string)?.toLowerCase() || "";
+      return (
+        title.includes(search) ||
+        artist.includes(search) ||
+        release.includes(search)
+      );
+    },
     state: {
       sorting,
       columnFilters,
+      globalFilter,
     },
     meta: {
       editingSong: editingSong,
@@ -157,7 +166,6 @@ export function DataTable<TData, TValue>({
         .getRowModel()
         .rows.map((r) => (r.original as Song).path);
     } else {
-
       songPaths = allSongs.map((s) => s.path);
     }
 
@@ -179,10 +187,7 @@ export function DataTable<TData, TValue>({
     try {
       await api.addSongToPlaylist(playlistName, song);
       toast.success(t("Added to Playlist"), {
-        description: t(`Added "{{songTitle}}" to "{{playlistName}}"`, {
-          songTitle: song.title || "Unknown",
-          playlistName,
-        }),
+        description: `Added "${song.title || "Unknown"}" to "${playlistName}"`,
       });
       const updatedPlaylists = await api.getAllPlaylists();
       setPlaylists(updatedPlaylists);
@@ -195,10 +200,7 @@ export function DataTable<TData, TValue>({
     try {
       await api.addElementToAlist(alistName, { Song: song });
       toast.success(t("Added to Alist"), {
-        description: t(`Added "{{songTitle}}" to "{{alistName}}"`, {
-          songTitle: song.title || "Unknown",
-          alistName,
-        }),
+        description: `Added "${song.title || "Unknown"}" to "${alistName}"`,
       });
     } catch (e) {
       toast.error(t("Failed to Add"), { description: String(e) });
@@ -211,10 +213,9 @@ export function DataTable<TData, TValue>({
     try {
       await api.removeSongFromPlaylistAll(playlistName, songToRemove);
       toast.success(t("Removed from Playlist"), {
-        description: t(`Removed all "{{title}}" from "{{playlistName}}"`, {
-          title: songToRemove.title || "Unknown",
-          playlistName,
-        }),
+        description: `Removed all "${
+          songToRemove.title || "Unknown"
+        }" from "${playlistName}"`,
       });
       onSongSaved?.();
     } catch (e) {
@@ -233,10 +234,9 @@ export function DataTable<TData, TValue>({
         itemToRemoveByIndex.index,
       ]);
       toast.success(t("Removed from Playlist"), {
-        description: t(`Removed song "{{title}}" from "{{playlistName}}"`, {
-          title: itemToRemoveByIndex.song.title || "Unknown",
-          playlistName,
-        }),
+        description: `Removed song "${
+          itemToRemoveByIndex.song.title || "Unknown"
+        }" from "${playlistName}"`,
       });
       onSongSaved?.();
     } catch (e) {
@@ -253,9 +253,9 @@ export function DataTable<TData, TValue>({
     try {
       await api.delete_song_file(songToDeleteFromDisk.path);
       toast.success(t("Deleted from Disk"), {
-        description: t(`Deleted "{{title}}" from disk`, {
-          title: songToDeleteFromDisk.title || "Unknown",
-        }),
+        description: `Deleted "${
+          songToDeleteFromDisk.title || "Unknown"
+        }" from disk`,
       });
       onSongSaved?.();
     } catch (e) {
@@ -271,12 +271,8 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center py-4">
         <Input
           placeholder={t("Filtering songs...")}
-          value={
-            (table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""
-          }
-          onChange={(event) =>
-            table.getColumn(filterColumn)?.setFilterValue(event.target.value)
-          }
+          value={globalFilter ?? ""}
+          onChange={(event) => setGlobalFilter(event.target.value)}
           className="max-w-sm"
         />
       </div>
@@ -488,7 +484,7 @@ export function DataTable<TData, TValue>({
               <span className="font-bold text-foreground">
                 &quot;{songToRemove?.title || "Unknown"}&quot;
               </span>
-              {t("from the playlist {{playlistName}}?", { playlistName })}
+              from the playlist {playlistName}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -518,7 +514,7 @@ export function DataTable<TData, TValue>({
               <span className="font-bold text-foreground">
                 &quot;{itemToRemoveByIndex?.song.title || "Unknown"}&quot;
               </span>
-              {t("from the playlist {{playlistName}}?", { playlistName })}
+              from the playlist {playlistName}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
