@@ -15,28 +15,16 @@ const PIC_SUFFIXES: [&str; 7] = ["jpg", "jpeg", "png", "bmp", "gif", "webp", "ti
 #[allow(unused)]
 impl Song {
     pub fn get_release_art(&self) -> CoreResult<Option<Picture>> {
-        // Use relaxed parsing mode to handle files with invalid MIME types
         let parse_options = ParseOptions::new()
             .read_properties(true)
             .parsing_mode(lofty::config::ParsingMode::Relaxed);
 
         let tagged_file = Probe::open(&self.path)?.options(parse_options).read()?;
-        let tag = tagged_file
+        let pic = tagged_file
             .primary_tag()
-            .ok_or_else(|| {
-                CoreError::OtherError(format!("No primary tag found for file: {:?}", &self.path))
-            })?
-            .pictures()
-            .first()
-            .cloned();
-        debug!(
-            "Retrieved cover art for song: {}: {:?}",
-            // self.artist.clone().unwrap_or_default(),
-            // self.title.clone().unwrap_or_default(),
-            self.path.clone().to_string_lossy(),
-            tag.as_ref().map(|_| "Some(Picture)").unwrap_or("None")
-        );
-        Ok(tag)
+            .and_then(|tag| tag.pictures().first().cloned());
+        debug!("get_release_art for {:#?}: {:#?}", self.path, pic);
+        Ok(pic)
     }
 
     pub fn has_release_art(&self) -> CoreResult<bool> {
